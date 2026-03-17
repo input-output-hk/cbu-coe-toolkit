@@ -1,0 +1,21 @@
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*secret*
+*credential*
+*token*
+!**/docs/decisions/*  # don't ignore files that happen to match patterns in docs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
