@@ -1,0 +1,135 @@
+# CBU CoE — Tracked Repositories
+# Source of truth for which repos are measured across all CoE models
+# (AI Augmentation, Capability Maturity, Engineering Vitals).
+#
+# Add or remove repos here to control the next monthly snapshot.
+# Signal detection patterns live in each model's scoring methodology.
+#
+# Last updated: March 2026
+
+orgs:
+
+  - name: IntersectMBO
+    repos:
+      - repo: cardano-node
+        project: Cardano Core
+        language: Haskell
+
+      - repo: cardano-cli
+        project: Cardano Core
+        language: Haskell
+
+      - repo: cardano-api
+        project: Cardano Core
+        language: Haskell
+
+      - repo: cardano-ledger
+        project: Cardano Core
+        language: Haskell
+
+      - repo: ouroboros-consensus
+        project: Cardano Core
+        language: Haskell
+
+      - repo: ouroboros-network
+        project: Cardano Core
+        language: Haskell
+
+      - repo: cardano-base
+        project: Cardano Core
+        language: Haskell
+
+      - repo: cardano-db-sync
+        project: DB-Sync
+        language: Haskell
+
+      - repo: plutus
+        project: Plutus Core
+        language: Haskell
+
+      - repo: cardano-haskell-packages
+        project: CHaP
+        language: Shell
+
+      - repo: cardano-node-tests
+        project: Cardano Core — E2E Testing
+        language: Python
+
+  - name: input-output-hk
+    repos:
+      - repo: lace
+        project: Lace Wallet
+        language: TypeScript
+
+      - repo: mithril
+        project: Mithril
+        language: Rust
+
+      - repo: ouroboros-leios
+        project: Leios
+        language: Haskell/Rust
+
+      - repo: haskell.nix
+        project: Infrastructure / Nix
+        language: Nix
+
+      - repo: io-sim
+        project: Cardano Core / io-sim
+        language: Haskell
+
+      - repo: sc-fvt
+        project: Plutus HA — Formal Verification / PBT
+        language: Lean
+
+      - repo: Lean-blaster
+        project: Plutus HA — Formal Verification
+        language: Lean
+
+      - repo: Blaster-benchmarking
+        project: Plutus HA — Formal Verification
+        language: Shell
+
+      - repo: CardanoBlaster
+        project: Plutus HA — Formal Verification
+        language: unknown
+        notes: Private — may be inaccessible
+
+      - repo: afv-rpc-api
+        project: Plutus HA — Formal Verification
+        language: Lean
+
+      - repo: sc-tools-experiments
+        project: Plutus HA — PBT
+        language: unknown
+
+      - repo: plu-stan
+        project: Plutus HA — Static Analyzer
+        language: Haskell
+
+      - repo: Cardano-CWE-Research
+        project: Plutus HA — Static Analyzer
+        language: unknown
+
+      - repo: CHA-react-FE-template
+        project: Plutus HA — Templated Frontend
+        language: TypeScript
+
+      - repo: glyph
+        project: Plutus HA — Glyph (UPLC→RISCV)
+        language: UPLC
+
+  - name: cardano-scaling
+    repos:
+      - repo: hydra
+        project: Hydra
+        language: Haskell/Rust
+
+  - name: HarmonicLabs
+    repos:
+      - repo: pluts-emulator
+        project: Plutus HA — Plu-ts
+        language: TypeScript
+
+      - repo: pebble-lsp
+        project: Plutus HA — Plu-ts
+        language: TypeScript
