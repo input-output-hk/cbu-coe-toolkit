@@ -26,37 +26,48 @@ Before doing ANY GitHub work, the agent MUST run this pre-flight check:
 # Step 1: Ensure GITHUB_TOKEN is loaded from shell profile
 source ~/.zshrc 2>/dev/null || source ~/.bashrc 2>/dev/null
 
-# Step 2: Verify token exists
+# Step 2: Verify token exists (DO NOT print/echo the value)
 if [ -z "$GITHUB_TOKEN" ]; then
   echo "FATAL: GITHUB_TOKEN not set. Cannot proceed."
   echo "Set it in ~/.zshrc and re-source, or export it manually."
-  exit 1
+  # STOP HERE — do not continue
 fi
 
-# Step 3: Verify token works with a test call
-gh auth status
+# Step 3: Verify token works (test call, discard response body)
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://api.github.com/user
+# Must return 200. Any other code → STOP and ask the operator.
 ```
 
-**If any step fails, STOP and ask the human operator.** Do not proceed without a working token. Do not attempt partial scans or fall back to unauthenticated API calls. Never print, log, display, or save the token value.
+**If any step fails, STOP and ask the human operator.** Do not proceed without a working token. Do not attempt partial scans. Do not fall back to unauthenticated API calls.
 
-### Use `git` Commands, Not `gh` or `curl`
+### Secret Protection Rules
 
-All repository data collection MUST use standard `git` commands — not `gh` CLI, not raw `curl`, not `fetch`.
+These rules apply to `$GITHUB_TOKEN` and any other credential used during scanning:
 
-**Approach:**
-1. **Clone repos** with `git clone --depth 1` into a temp directory to inspect file trees, read file contents, check configs
-2. **Inspect locally** using `git log`, `git show`, `ls`, `cat` — this gives you file trees, README, AI configs, workflow YAML, commit history, all without API rate limits
-3. **For PR/issue data** (not in git), use `git log --merges` to detect merge activity, and authenticated API calls only when strictly necessary (branch protection, GitHub Projects)
-4. **Authenticated API calls** (when needed) use the `$GITHUB_TOKEN` via: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/...`
+1. **Never print, echo, or log the token value.** Not in shell output, not in debug messages, not in error messages. Use `$GITHUB_TOKEN` as an env var reference only — never interpolate it into strings that get displayed.
+2. **Never save the token to any file.** Not in JSON results, not in evidence fields, not in learnings, not in commit messages, not in temp files.
+3. **Never include the token in git operations.** Do not embed it in clone URLs (e.g., `https://{token}@github.com/...`). Use the env var form: `git clone` will pick up credentials from the git credential helper or from the `GITHUB_TOKEN` env var automatically.
+4. **Scrub API responses before storing.** If any API response contains tokens, auth headers, or session data, strip them before writing to results JSON.
+5. **Before every commit, scan staged changes** for token patterns: `git diff --cached | grep -iE '(ghp_|github_pat_|gho_|Bearer |token|secret|password|api[_-]?key)'`. If anything matches, unstage and fix before committing.
+6. **curl calls use env var expansion**, which keeps the token out of `/proc` and shell history: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN"`. Never use `-u` with a literal token string.
 
-**Why git over API:**
-- No rate limiting for clone/local operations
-- Full file tree and content available instantly after clone
-- Commit history (including AI config evolution) inspectable via `git log`
-- Avoids dependency on `gh` CLI installation
-- Token exposure minimized (only used for API calls that cannot be done via git)
+### Data Collection Strategy: API-First, git clone for Deep History
 
-**If `git` cannot clone a repo** (auth failure, private repo), try the API. If both fail, mark the repo as inaccessible.
+Use the GitHub REST API via `curl` for structured data. Use `git clone` only when deep commit history analysis is needed (learning signal assessment).
+
+**Why API-first works:**
+- 29 repos × ~12 calls each ≈ 350 calls — 7% of the 5,000/hour authenticated limit
+- API returns structured JSON (PRs with authors, file trees, language stats) — no parsing needed
+- No disk overhead from cloning 29 repos
+- `git clone` reserved for the rare case where `git log --follow` on config files is needed
+
+**Rate limit awareness:** After the pre-flight check, query rate limit status:
+```bash
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/rate_limit \
+  | jq '.rate.remaining'
+# If < 500 remaining, warn the operator before proceeding
+```
 
 ---
 
@@ -70,34 +81,50 @@ For each repo, note: org, repo name, project, primary language.
 
 ### Step 2: For Each Repo — Collect Data
 
-**Clone first, then inspect locally.** Use API calls only for data that cannot be obtained via git.
+**API-first for structured data. `git clone` only for deep history.**
+
+All `curl` calls use the pattern: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN"`. Never inline the token literally.
+
+#### Phase A: API calls (~8-12 per repo)
+
+| Data | Purpose | API Call | Est. Calls |
+|------|---------|----------|------------|
+| File tree | Readiness scoring, AI config detection | `GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1` | 1 |
+| Language stats | Language detection for Readiness bonuses | `GET /repos/{owner}/{repo}/languages` | 1 |
+| README.md | R2 scoring | `GET /repos/{owner}/{repo}/contents/README.md` | 1 |
+| AI config file contents | Adoption Stage 1 quality check | `GET /repos/{owner}/{repo}/contents/{path}` per config file found | 1-3 |
+| Workflow YAML files | Condition A checks, Stage 3 detection | `GET /repos/{owner}/{repo}/contents/.github/workflows` then each file | 2-4 |
+| Merged PRs (since lookback) | Stage 2+ adoption, AI bot detection | `GET /repos/{owner}/{repo}/pulls?state=closed&sort=updated&per_page=50` | 1 |
+| PR reviews (sample) | Minimum viability check | `GET /repos/{owner}/{repo}/pulls/{number}/reviews` for 5 recent PRs | 1-5 |
+| Recent issues | Delivery dimension signals | `GET /repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` | 1 |
+| Branch protection | Minimum viability check | `GET /repos/{owner}/{repo}/branches/{branch}/protection` (may 404) | 1 |
+| Commits on AI config files | Learning signal assessment | `GET /repos/{owner}/{repo}/commits?path={file}&per_page=10` per config | 1-3 |
+
+**Total: ~350 calls for 29 repos (7% of 5,000/hour limit).**
+
+#### Phase B: `git clone` (only when needed)
+
+If learning signal assessment needs deeper commit history than the API provides (e.g., `git log --follow` to track renames, or diff analysis on config evolution):
 
 ```bash
-# Clone into temp directory (shallow clone for speed)
+# Shallow clone into temp directory — DO NOT embed token in URL
 git clone --depth 50 "https://github.com/{owner}/{repo}.git" /tmp/scan/{repo}
 cd /tmp/scan/{repo}
+
+# Inspect config evolution
+git log --follow --format="%H %ai %s" -- CLAUDE.md
+
+# Cleanup after inspection
+rm -rf /tmp/scan/{repo}
 ```
 
-| Data | Purpose | How to Get |
-|------|---------|------------|
-| Full file tree | Readiness scoring, AI config detection | `find . -type f` or `git ls-tree -r --name-only HEAD` after clone |
-| README.md content | R2 scoring | `cat README.md` after clone |
-| AI config file contents | Adoption Stage 1 quality check | `cat {path}` for each detected config file after clone |
-| Workflow YAML files | Condition A checks, Stage 3 detection | `ls .github/workflows/` and `cat` each file after clone |
-| Recent commits | AI co-author detection, learning signals | `git log --since="{lookback_date}" --format="%H %an %s"` |
-| Merge commits (proxy for PRs) | Stage 2+ adoption signals | `git log --merges --since="{lookback_date}" --format="%H %an %s %b"` |
-| Commit history on AI config files | Learning signal assessment | `git log --follow -- {config_file}` |
-| Language stats | Language detection for bonuses | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/languages` |
-| PR details (authors, reviews) | Stage 2+ detection, min viability | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/pulls?state=closed&sort=updated&per_page=30` |
-| Branch protection rules | Minimum viability check | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/branches/{branch}/protection` |
-| Issues | Delivery dimension signals | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` |
-| GitHub Projects | Delivery dimension | API (GraphQL): `projectsV2` query |
+**Note:** `git clone` of public repos works without authentication. For private repos, git uses the credential helper or `$GITHUB_TOKEN` from the environment — never embed the token in the clone URL.
 
-**Priority: git first, API second.** Most scoring signals (file tree, configs, workflows, commit history) come from the cloned repo. API is needed only for PRs, issues, branch protection, and language stats.
+#### Error Handling
 
-**If a repo is inaccessible** (clone fails AND API returns 403/404), score all dimensions as N/A, exclude from aggregates, and note in the report.
-
-**Cleanup:** Remove cloned repos from `/tmp/scan/` after scanning.
+- **403/404 on a repo:** Score all dimensions as N/A, exclude from aggregates, note in report
+- **403 on branch protection:** Note "branch protection data unavailable (insufficient permissions)" — this is common without admin access, not a blocker
+- **Rate limit approaching:** Check `X-RateLimit-Remaining` header on each response. If < 200, pause and warn operator
 
 **Lookback window:** AI activity signals (PRs, commits, issues) since the previous snapshot date. Config files and workflows as of the current snapshot.
 
