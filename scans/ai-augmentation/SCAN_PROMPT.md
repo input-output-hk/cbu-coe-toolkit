@@ -177,18 +177,48 @@ Quadrant sub-level:
 
 ### Step 7: Generate Next Steps
 
-For each repo, determine the **top 3 actions** ordered by impact-to-effort ratio:
+For each repo, determine the **top 3 actions** ordered by impact-to-effort ratio.
 
-1. **Identify candidate actions:** For each dimension below its potential, determine what specific action would advance it.
-2. **Estimate effort:** Low = <1 day (config change, enable tool). Medium = 1-5 days (workflow setup, bot integration). High = 5+ days (pipeline redesign, org-wide rollout).
-3. **Calculate impact:** For each action, determine which dimensions advance (from stage·sub → to stage·sub) and compute the Adoption composite change.
-4. **Rank by impact/effort:** Highest ratio first.
-5. **Select top 3.**
+#### 7.1 Identify Candidate Actions
+
+For each dimension below its potential, determine what specific action would advance it. **Recommendations must be repo-specific and language-aware:**
+
+- Reference actual file names, package names, and module structures from the collected data
+- Explain WHY this action matters for AI effectiveness on THIS codebase, not just that it advances a score
+- Connect the action to concrete problems an AI agent would face today without it
+- Tailor to the language ecosystem (Haskell recommendations differ from Rust differ from TypeScript)
+
+**BAD recommendation:** "Add CLAUDE.md covering architecture and coding conventions"
+→ This is generic, incentivizes checkbox behavior, and doesn't explain what makes this repo special.
+
+**GOOD recommendation:** "Document cardano-ledger's era-based validation pipeline: how `eras/conway/impl/` relates to `libs/cardano-ledger-core/`, what the CDDL specs in `eras/*/cddl-spec/` enforce, and how property-based tests in `*-test` packages verify ledger rules. Today an AI modifying a ledger rule has no way to know it must also update the CDDL spec and the property test."
+→ This is specific, explains the gap, and connects to real AI effectiveness.
+
+#### 7.2 Recommendation Quality Rules
+
+Every recommendation MUST pass these checks:
+
+1. **Specificity test:** Does it mention actual files, packages, or patterns from THIS repo? If you could copy-paste it to a different repo and it still makes sense, it's too generic.
+2. **AI effectiveness test:** Would implementing this actually help an AI agent produce better output? Or is it just adding a file for a score? If a team could implement it as an empty gesture and still "pass", the recommendation is wrong.
+3. **Language relevance test:** Does it reflect this language ecosystem's conventions and tooling? A Haskell repo needs different AI context than a Rust repo.
+4. **Effort realism test:** Is the effort estimate honest? "Low" means a developer can do it in under a day with clear guidance. Don't understate effort to inflate the impact/effort ratio.
+5. **Impact honesty test:** Does the projected Stage/Sub-level change reflect real capability improvement, or just a scoring technicality? If the repo wouldn't measurably benefit from the change, don't recommend it.
+
+#### 7.3 Score Impact
+
+For each candidate that passes quality checks:
+
+1. **Estimate effort:** Low = <1 day (focused, clear scope). Medium = 1-5 days (integration work, tooling setup). High = 5+ days (architecture changes, org-wide coordination).
+2. **Calculate impact:** Which dimensions advance (from Stage·Sub → to Stage·Sub), and the Adoption composite change.
+3. **Rank by impact/effort ratio.** Select top 3.
+
+#### 7.4 Output Format
 
 Each Next Step must include:
-- Concrete action description
-- Effort level (Low / Medium / High)
-- Impact: which dimensions advance, from→to, and Adoption composite change
+- **Action:** Concrete, repo-specific description (what to do AND why it matters)
+- **Effort:** Low / Medium / High
+- **Impact:** Which dimensions advance, from→to, and Adoption composite change
+- **Why this matters:** 1 sentence connecting the action to AI effectiveness on this codebase
 
 ### Step 8: Compute Delta from Previous Scan
 
@@ -223,19 +253,101 @@ After all repos are scored, produce the org-level summary (model-spec.md Section
 - Risk flags (Risky Acceleration repos, static learning 3+ months)
 - Headline insight (1-2 sentence summary)
 
-### Step 11: Human Review
+### Step 11: Automated Validation (MANDATORY before presenting results)
+
+Before showing results to the human operator, run this validation pass. **Do not skip this step.** If any check fails, fix the issue before proceeding.
+
+#### 11.1 Score Consistency Checks
+
+```
+For each repo:
+  □ Readiness composite matches R1*0.30 + R2*0.30 + R3*0.25 + R4*0.15 (±1 rounding)
+  □ Adoption composite matches weighted sum of mapped scores (±1 rounding)
+  □ No dimension at Stage 2+ without Stage 1 foundation
+  □ Static learning signal → sub-level is not High
+  □ Single AI tool → AI Practices sub-level is not above Mid
+  □ Stale config (>180 days) → sub-level is not above Low
+  □ Quadrant matches Readiness × Adoption coordinates
+  □ Every dimension has non-empty evidence field
+```
+
+#### 11.2 Recommendation Validation
+
+For EACH of the 3 Next Steps per repo, verify:
+
+```
+  □ SPECIFICITY: Does the recommendation mention actual file names, package
+    names, or architectural patterns from THIS repo? Could you NOT copy-paste
+    it to a different repo unchanged?
+    FAIL example: "Add CLAUDE.md covering architecture and coding conventions"
+    PASS example: "Document the 28-package era-based architecture in CLAUDE.md,
+    explaining how eras/conway/impl/ depends on libs/cardano-ledger-core/"
+
+  □ AI EFFECTIVENESS: Would this concretely improve AI agent output on this
+    repo? What specific task would an AI do better after this change?
+    FAIL: "Add AI config" (vague, no connection to outcomes)
+    PASS: "Enable AI to generate correct cross-package changes by documenting
+    which test packages verify which implementation packages"
+
+  □ LANGUAGE RELEVANCE: Does the recommendation reflect this language's
+    ecosystem? Haskell repos need different AI context than Rust or TypeScript.
+    FAIL: Generic "add linting" for a Haskell repo that already has hlint+fourmolu
+    PASS: "Document the QuickCheck property patterns used in ledger-test so AI
+    can generate property-based tests matching the existing style"
+
+  □ EFFORT HONESTY: Is the effort estimate realistic? Would a developer who
+    knows this codebase agree with the time estimate?
+
+  □ IMPACT HONESTY: Does the projected score change reflect genuine capability
+    improvement, or just a scoring technicality? If someone implemented this
+    recommendation minimally (checkbox style), would it STILL improve AI
+    effectiveness?
+
+  □ NOT REDUNDANT: Is this recommendation materially different from the other
+    2 recommendations for this repo? No overlapping actions.
+```
+
+**If a recommendation fails any check, rewrite it.** Generic recommendations that could apply to any repo are always wrong.
+
+#### 11.3 Cross-Repo Validation
+
+```
+  □ Repos with similar profiles have comparable scores (two Haskell repos
+    with similar structure shouldn't differ by >15 on Readiness without
+    clear explanation)
+  □ Org-level top actions are genuinely the highest-leverage moves, not
+    just the most repeated generic action
+  □ Risk flags are actionable (specific repo, specific risk, specific fix)
+```
+
+#### 11.4 Validation Output
+
+Record the validation results in the JSON output under a `validation` field:
+```json
+{
+  "validation": {
+    "score_consistency": "pass",
+    "recommendation_quality": "pass — all 15 recommendations verified repo-specific",
+    "cross_repo_consistency": "pass",
+    "issues_found_and_fixed": ["mithril: rewrote Step 1 from generic to specific"]
+  }
+}
+```
+
+### Step 12: Human Review
 
 **Show all results to the human operator before writing to disk or publishing.**
 
 Present:
 1. Per-repo reports (box format)
 2. Org-level summary
-3. Any anomalies, edge cases, or judgment calls made during scoring
-4. Proposed Next Steps
+3. Validation results (Step 11 output)
+4. Any anomalies, edge cases, or judgment calls made during scoring
+5. Proposed Next Steps — highlight which recommendations were rewritten during validation
 
 Wait for approval before proceeding.
 
-### Step 12: Publish to Notion (on approval)
+### Step 13: Publish to Notion (on approval)
 
 On human approval:
 1. Look up page IDs from `notion/page-registry.yaml`
