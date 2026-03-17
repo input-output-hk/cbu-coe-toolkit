@@ -1,1 +1,273 @@
-# Scan configuration\n# Tracked repos, orgs, signal definitions\n
+# AAMM v3 — Scan Configuration
+# Signal definitions, AI config patterns, bot names, and scan settings.
+# For tracked repos, see models/config.yaml (the master list).
+#
+# Model version: v3.0
+# Last updated: March 2026
+
+# --------------------------------------------------------------------------
+# Repo List Reference
+# --------------------------------------------------------------------------
+# The tracked repo list lives in models/config.yaml.
+# Do NOT duplicate it here. The scan agent reads that file directly.
+repo_list: models/config.yaml
+
+# --------------------------------------------------------------------------
+# Model Documents (agent reads these before scanning)
+# --------------------------------------------------------------------------
+model_documents:
+  spec: models/ai-augmentation-maturity-v3/model-spec.md
+  adoption_scoring: models/ai-augmentation-maturity-v3/adoption-scoring.md
+  readiness_scoring: models/ai-augmentation-maturity-v3/readiness-scoring.md
+
+# --------------------------------------------------------------------------
+# Results Location
+# --------------------------------------------------------------------------
+results:
+  directory: scans/ai-augmentation/results
+  filename_pattern: "YYYY-MM.json"
+  # Pilot results use: 2026-03-pilot.json
+  # Never overwrite previous snapshots
+
+# --------------------------------------------------------------------------
+# Notion Publishing
+# --------------------------------------------------------------------------
+notion:
+  page_registry: notion/page-registry.yaml
+  publish_skill: skills/publish-to-notion/
+
+# --------------------------------------------------------------------------
+# AI Config File Patterns
+# --------------------------------------------------------------------------
+# Complete list of accepted AI config files for Stage 1 detection.
+# Updated as new AI tools emerge.
+ai_config_files:
+  # Claude
+  - path: "CLAUDE.md"
+    type: instructional
+  - path: "claude.md"
+    type: instructional
+  - path: ".claude/settings.json"
+    type: configuration
+  - path: ".claude/commands/"
+    type: directory
+    note: "Custom commands — check for iteration in commit history"
+
+  # Multi-agent
+  - path: "AGENTS.md"
+    type: instructional
+
+  # Gemini
+  - path: "GEMINI.md"
+    type: instructional
+
+  # GitHub Copilot
+  - path: ".github/copilot-instructions.md"
+    type: instructional
+  - path: ".github/copilot-setup-steps.yml"
+    type: configuration
+
+  # Cursor
+  - path: ".cursor/rules"
+    type: instructional
+  - path: ".cursorrules"
+    type: instructional
+
+  # MCP (Model Context Protocol)
+  - path: ".mcp.json"
+    type: configuration
+    note: "Check for version pinning on MCP servers"
+  - path: "mcp.json"
+    type: configuration
+
+  # Other AI tools
+  - path: "ai_run.sh"
+    type: script
+  - path: "agent_docs/"
+    type: directory
+  - path: ".aider*"
+    type: glob
+  - path: ".coderabbit.yaml"
+    type: configuration
+  - path: ".windsurfrules"
+    type: instructional
+  - path: ".continue/"
+    type: directory
+  - path: ".sourcegraph/cody"
+    type: directory
+  - path: ".codex/"
+    type: directory
+
+  # Ignore/exclusion files
+  - path: ".aiignore"
+    type: exclusion
+    note: "Sensitive path exclusion — positive signal for AI Practices"
+  - path: ".cursorignore"
+    type: exclusion
+
+# --------------------------------------------------------------------------
+# Quality Threshold
+# --------------------------------------------------------------------------
+# AI config files must contain meaningful project context to count for Stage 1.
+ai_config_quality:
+  min_substantive_lines: 50  # guideline, not hard cutoff
+  must_contain_any:
+    - architecture or module boundaries
+    - coding conventions or naming patterns
+    - testing standards or build commands
+    - security-critical areas or trust boundaries
+    - delivery workflow or estimation approach
+    - operational context or deployment topology
+  does_not_count:
+    - empty or stub files
+    - generic boilerplate without project-specific adaptation
+    - tool configuration only (no project context)
+
+# --------------------------------------------------------------------------
+# Bot Names for Stage 2+ Detection
+# --------------------------------------------------------------------------
+# AI bots that author PRs, commits, or reviews.
+# Update as new AI tools emerge.
+bot_names:
+  pr_authors:
+    - "copilot[bot]"
+    - "github-copilot[bot]"
+    - "dependabot[bot]"       # dependency PRs only — not AI code quality
+    - "renovate[bot]"         # dependency PRs only
+
+  ai_pr_authors:
+    # These indicate AI code generation activity (Stage 2+)
+    - "copilot[bot]"
+    - "github-copilot[bot]"
+
+  ai_reviewers:
+    # AI tools that review PRs
+    - "coderabbit-ai[bot]"
+    - "codeguru-reviewer[bot]"
+    - "copilot[bot]"
+
+  # Co-author patterns in commit messages (case-insensitive search)
+  co_author_patterns:
+    - "Co-authored-by: copilot"
+    - "Co-authored-by: Claude"
+    - "Co-authored-by: Cursor"
+    - "Co-authored-by: Gemini"
+    - "AI-generated"
+
+# --------------------------------------------------------------------------
+# Security Scanning Tools
+# --------------------------------------------------------------------------
+# Tools that satisfy Security Condition A (automated scanning).
+security_scanning_tools:
+  config_files:
+    - ".github/dependabot.yml"
+    - "renovate.json"
+    - "renovate.json5"
+    - "deny.toml"              # cargo-deny
+  workflow_keywords:
+    - "codeql"
+    - "trivy"
+    - "snyk"
+    - "semgrep"
+    - "cargo-deny"
+    - "cargo audit"
+    - "cabal audit"
+    - "npm audit"
+    - "yarn audit"
+    - "bandit"                 # Python
+    - "safety"                 # Python
+
+# --------------------------------------------------------------------------
+# Language Detection
+# --------------------------------------------------------------------------
+# Primary language determines which Readiness bonus set applies.
+language_detection:
+  method: "GitHub API /repos/{owner}/{repo}/languages"
+  primary_threshold: 0.50  # Language must be >50% of LOC to be primary
+  bonus_sets:
+    - Haskell
+    - Rust
+    - TypeScript
+  # Languages without a bonus set use universal signals only.
+  # Multi-language repos: apply bonuses proportionally by LOC.
+
+# --------------------------------------------------------------------------
+# Language-Specific Infrastructure Signals
+# --------------------------------------------------------------------------
+# Noted as infrastructure readiness — contribute to Readiness, NOT Adoption.
+infrastructure_signals:
+  haskell:
+    - hlint
+    - weeder
+    - fourmolu
+    - ormolu
+    - stylish-haskell
+    - "-Werror"
+    - "-Wall"
+    - cabal audit
+    - cabal check
+    - hydra-coding-standards
+    - hydraJobs
+    - hie.yaml
+  rust:
+    - cargo audit
+    - cargo deny
+    - clippy
+    - cargo fmt
+    - rustfmt
+    - deny.toml
+    - rust-toolchain.toml
+  typescript:
+    - npm audit
+    - yarn audit
+    - eslint
+    - eslint-plugin-security
+    - prettier
+    - tsconfig.json
+  python:
+    - ruff
+    - mypy
+    - pyright
+    - pytest
+    - hypothesis
+    - ".pre-commit-config.yaml"
+    - pyproject.toml
+    - uv.lock
+  lean:
+    - lakefile.lean
+    - lake-manifest.json
+    - lean-toolchain
+
+# --------------------------------------------------------------------------
+# Scan Timing
+# --------------------------------------------------------------------------
+cadence:
+  frequency: monthly
+  target_day: "First working day of each month"
+  lookback_window: "Since previous snapshot date"
+  # Config files and workflow YAML: checked as of current snapshot
+  # AI activity signals (PRs, commits, issues): checked since previous snapshot
+
+# --------------------------------------------------------------------------
+# Stale Config Threshold
+# --------------------------------------------------------------------------
+stale_config:
+  days: 180  # >6 months unchanged = stale
+  effect: "Dimension cannot be rated above Low sub-level"
+
+# --------------------------------------------------------------------------
+# Learning Signal Thresholds
+# --------------------------------------------------------------------------
+learning_signals:
+  static:
+    description: "AI config written once, no meaningful updates"
+    threshold: "No commits to AI config files in >90 days"
+    effect: "Cannot be rated High within stage"
+  evolving:
+    description: "AI config updated based on usage"
+    threshold: "Meaningful updates to AI config, custom commands added, feedback patterns documented"
+    effect: "Normal sub-level assessment"
+  self_improving:
+    description: "Automated feedback loops, cross-repo propagation"
+    threshold: "Config evolves based on outcomes, skills self-update, cross-repo patterns"
+    effect: "Sub-level boost: Low→Mid, Mid→High"
