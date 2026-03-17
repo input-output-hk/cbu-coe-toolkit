@@ -18,13 +18,45 @@ Before scanning any repo, read these documents in order:
 
 ---
 
-## Authentication
+## Authentication — Pre-Flight Check (MANDATORY)
 
-The agent authenticates with GitHub using the `$GITHUB_TOKEN` environment variable, which should already be set.
+Before doing ANY GitHub work, the agent MUST run this pre-flight check:
 
-**If the token is not available or authentication fails, stop and ask the human operator** — do not proceed without it. Never print, log, display, or save the token value.
+```bash
+# Step 1: Ensure GITHUB_TOKEN is loaded from shell profile
+source ~/.zshrc 2>/dev/null || source ~/.bashrc 2>/dev/null
 
-Verify access by making a test API call (e.g., `GET /user`) before scanning.
+# Step 2: Verify token exists
+if [ -z "$GITHUB_TOKEN" ]; then
+  echo "FATAL: GITHUB_TOKEN not set. Cannot proceed."
+  echo "Set it in ~/.zshrc and re-source, or export it manually."
+  exit 1
+fi
+
+# Step 3: Verify token works with a test call
+gh auth status
+```
+
+**If any step fails, STOP and ask the human operator.** Do not proceed without a working token. Do not attempt partial scans or fall back to unauthenticated API calls. Never print, log, display, or save the token value.
+
+### Use `git` Commands, Not `gh` or `curl`
+
+All repository data collection MUST use standard `git` commands — not `gh` CLI, not raw `curl`, not `fetch`.
+
+**Approach:**
+1. **Clone repos** with `git clone --depth 1` into a temp directory to inspect file trees, read file contents, check configs
+2. **Inspect locally** using `git log`, `git show`, `ls`, `cat` — this gives you file trees, README, AI configs, workflow YAML, commit history, all without API rate limits
+3. **For PR/issue data** (not in git), use `git log --merges` to detect merge activity, and authenticated API calls only when strictly necessary (branch protection, GitHub Projects)
+4. **Authenticated API calls** (when needed) use the `$GITHUB_TOKEN` via: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/...`
+
+**Why git over API:**
+- No rate limiting for clone/local operations
+- Full file tree and content available instantly after clone
+- Commit history (including AI config evolution) inspectable via `git log`
+- Avoids dependency on `gh` CLI installation
+- Token exposure minimized (only used for API calls that cannot be done via git)
+
+**If `git` cannot clone a repo** (auth failure, private repo), try the API. If both fail, mark the repo as inaccessible.
 
 ---
 
@@ -38,24 +70,34 @@ For each repo, note: org, repo name, project, primary language.
 
 ### Step 2: For Each Repo — Collect Data
 
-Use the GitHub API (REST or GraphQL) to collect:
+**Clone first, then inspect locally.** Use API calls only for data that cannot be obtained via git.
 
-| Data | Purpose | API Approach |
-|------|---------|--------------|
-| Full file tree | Readiness scoring, AI config detection | `GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1` |
-| README.md content | R2 scoring | `GET /repos/{owner}/{repo}/contents/README.md` |
-| AI config file contents | Adoption Stage 1 quality check | `GET /repos/{owner}/{repo}/contents/{path}` for each detected config |
-| Workflow YAML files | Condition A checks, Stage 3 detection | `GET /repos/{owner}/{repo}/contents/.github/workflows/` |
-| Merged PRs (since last snapshot) | Stage 2+ adoption signals | `GET /repos/{owner}/{repo}/pulls?state=closed&sort=updated` |
-| PR reviews for merged PRs | Minimum viability check | `GET /repos/{owner}/{repo}/pulls/{number}/reviews` |
-| Recent commits on default branch | AI co-author detection | `GET /repos/{owner}/{repo}/commits` |
-| Recent issues | Delivery dimension signals | `GET /repos/{owner}/{repo}/issues?state=all&sort=updated` |
-| GitHub Projects | Delivery dimension | GraphQL `projectsV2` |
-| Branch protection rules | Minimum viability check | `GET /repos/{owner}/{repo}/branches/{branch}/protection` |
-| Language stats | Language detection for bonuses | `GET /repos/{owner}/{repo}/languages` |
-| Commit history on AI config files | Learning signal assessment | `GET /repos/{owner}/{repo}/commits?path={config_file}` |
+```bash
+# Clone into temp directory (shallow clone for speed)
+git clone --depth 50 "https://github.com/{owner}/{repo}.git" /tmp/scan/{repo}
+cd /tmp/scan/{repo}
+```
 
-**If a repo is inaccessible** (403/404), score all dimensions as N/A, exclude from aggregates, and note in the report.
+| Data | Purpose | How to Get |
+|------|---------|------------|
+| Full file tree | Readiness scoring, AI config detection | `find . -type f` or `git ls-tree -r --name-only HEAD` after clone |
+| README.md content | R2 scoring | `cat README.md` after clone |
+| AI config file contents | Adoption Stage 1 quality check | `cat {path}` for each detected config file after clone |
+| Workflow YAML files | Condition A checks, Stage 3 detection | `ls .github/workflows/` and `cat` each file after clone |
+| Recent commits | AI co-author detection, learning signals | `git log --since="{lookback_date}" --format="%H %an %s"` |
+| Merge commits (proxy for PRs) | Stage 2+ adoption signals | `git log --merges --since="{lookback_date}" --format="%H %an %s %b"` |
+| Commit history on AI config files | Learning signal assessment | `git log --follow -- {config_file}` |
+| Language stats | Language detection for bonuses | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/languages` |
+| PR details (authors, reviews) | Stage 2+ detection, min viability | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/pulls?state=closed&sort=updated&per_page=30` |
+| Branch protection rules | Minimum viability check | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/branches/{branch}/protection` |
+| Issues | Delivery dimension signals | API: `curl -s -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` |
+| GitHub Projects | Delivery dimension | API (GraphQL): `projectsV2` query |
+
+**Priority: git first, API second.** Most scoring signals (file tree, configs, workflows, commit history) come from the cloned repo. API is needed only for PRs, issues, branch protection, and language stats.
+
+**If a repo is inaccessible** (clone fails AND API returns 403/404), score all dimensions as N/A, exclude from aggregates, and note in the report.
+
+**Cleanup:** Remove cloned repos from `/tmp/scan/` after scanning.
 
 **Lookback window:** AI activity signals (PRs, commits, issues) since the previous snapshot date. Config files and workflows as of the current snapshot.
 
