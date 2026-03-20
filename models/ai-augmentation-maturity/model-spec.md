@@ -24,6 +24,47 @@ This model gives visibility into how ready repositories are for AI collaboration
 - **Require human intervention for calculation.** Everything is computed from GitHub API data.
 - **Reward presence of files without real usage.** A CLAUDE.md that nobody uses does not improve a score. Recommendations target measurable outcomes, not checkbox compliance.
 
+### AI Value Framing
+
+**AI's highest value is as adversarial reviewer, challenger, and auditor — not just code generator.** This applies to ALL repos, but is especially critical for repos with formal specifications, security-critical code, or financial transactions.
+
+For any repo, AI can:
+- **Threat model:** "What happens if this input overflows? What if the collection is empty?"
+- **Challenge PRs:** "This PR modifies validation logic but adds no test for the new branch."
+- **Audit completeness:** "The spec defines 14 rules. Tests cover 11. Missing: rules 7, 12, 14."
+- **Review generators:** "This generator never produces inputs >100 items. Distribution check shows 0% coverage on the large-input bracket."
+- **Flag performance:** "This fold is O(n×m) per iteration. With production-scale data, that's ~3M operations."
+- **Check security:** "This module imports unsafe operations — why? Is the FFI call constant-time?"
+
+AI also drives **quality improvements** across the entire development lifecycle:
+- **Documentation quality:** Generating and maintaining Haddock/JSDoc, README sections, ADRs, architecture docs
+- **Test quality:** Reviewing generator coverage, suggesting missing properties, scaffolding test infrastructure
+- **PR quality:** Structured descriptions, impact analysis, linking to specs/issues
+- **Issue quality:** Decomposition, acceptance criteria, linking to code/specs
+- **Tooling quality:** CI workflow improvements, build optimization, dependency management
+
+AI also enables **research and discovery**:
+- **Competitive/ecosystem research:** "What testing approaches do similar projects (Ethereum, Polkadot, Mina) use that we don't?"
+- **Gap analysis:** "What's possible with our codebase structure that we're not doing yet?"
+- **Best practice discovery:** "What CI/CD patterns are emerging in the Haskell ecosystem?"
+- **Dependency analysis:** "Which of our 28 packages have the most transitive dependencies? Which are most at risk?"
+
+Recommendations should frame AI adoption as a quality multiplier across the entire SDLC — adversarial reviewer on critical code, quality driver on docs/tests/process, research tool for discovery and gap analysis, and code generator on boilerplate and mechanical work.
+
+### Out of Scope
+
+This model operates within a 50-call GitHub API budget with no AST parsing. It fundamentally **cannot**:
+
+- Verify that property test generators produce adversarial inputs
+- Verify that formal specifications cover the implementation
+- Detect subtle type-level errors in polymorphic code
+- Assess cryptographic implementation quality (constant-time, side-channel resistance)
+- Measure actual test effectiveness (only test presence and infrastructure)
+- Detect consensus rule bugs or serialization mismatches
+- Evaluate concurrency safety beyond framework detection
+
+**A high readiness score means "structurally ready for AI collaboration" — NOT "comprehensively secure" or "well-tested."** Teams and leadership should understand this distinction. The model measures structure and infrastructure, not correctness.
+
 ### The Three-Model Architecture
 
 | Question | Model | Measures |
@@ -190,16 +231,16 @@ Penalties reduce the Readiness composite for objectively dangerous behaviors. Th
 |---|---|---|
 | No scanning tool AND no alternative strategy | **-10** | TS repo with 1000+ npm deps, no Dependabot |
 | Scanning tool exists but doesn't cover primary ecosystem | **-5** | Dependabot covers github-actions only, not npm |
-| Ecosystem lacks mature scanning tools, but team has dependency management strategy | **-5** | Haskell with index-state pinning + curated package overlay (no mature automated CVE scanning tool exists for Hackage) |
+| Ecosystem lacks mature scanning tools, team manages deps actively | **0** (risk flag only) | Haskell with index-state pinning + curated package overlay. No penalty — the team cannot adopt tooling that doesn't exist. Flagged as risk. |
 | Scanning tool active for primary ecosystem | **0** | Dependabot npm configured with daily schedule |
 
-The graduated scale recognizes that (a) not all ecosystems have equally mature scanning tooling, and (b) teams that actively manage dependencies (lockfiles, pinning, curated overlays) are in a fundamentally different risk posture than teams that do nothing — even if automated CVE monitoring is absent.
+**Principle:** Penalties are for things teams CAN fix but haven't. If no mature scanning tool exists for the ecosystem, the team is not negligent — the gap is flagged as a risk for visibility, not penalized as a failure.
 
 ```
 Readiness = max(0, Readiness_raw - sum(applicable_penalties))
 ```
 
-Penalties are deterministic. The vulnerability monitoring penalty has a two-tier gradation; all other penalties are binary.
+Penalties are deterministic. The vulnerability monitoring penalty has a graduated scale; all other penalties are binary.
 
 ### 3.5 Cross-Pillar Constraints
 
@@ -392,7 +433,55 @@ For audit and transparency — available on demand:
 
 ---
 
-## 7. Automation Requirements
+## 7. Domain Profiles
+
+The universal model scores all repos equally. Domain profiles add **supplementary signals and risk flags** without changing the core architecture. Profiles are optional annotations — they enrich the report, they don't replace the universal score.
+
+### 7.1 Blockchain Profile
+
+Applies to repos that: implement consensus/validation rules, handle financial transactions, have formal specifications, or process cryptographic operations.
+
+**Detection:** Presence of `.agda` files, `formal-spec/` directory, `.cddl` files, `SECURITY.md` with vulnerability disclosure, or explicit blockchain/ledger keywords in repo description/topics.
+
+**Supplementary signals** (reported alongside universal scores, not replacing them):
+
+| Signal | How to detect | Why it matters |
+|--------|--------------|----------------|
+| Formal spec presence | `.agda` files, `formal-spec/` dirs | Primary defense against consensus bugs |
+| Conformance testing | `conformance/` dirs, Agda refs in test infrastructure | Bridges spec-implementation gap |
+| Generator discipline | `cover`/`classify`/`tabulate`/`checkCoverage` in test files | Property tests are only as good as generators |
+| Concurrency testing | `io-sim`, `io-classes`, `dejafu` in dependencies | Network-layer correctness |
+| Strict evaluation discipline | `StrictData`, `BangPatterns` in default-extensions, `Strict*Var` wrappers | Memory safety under adversarial load |
+| Benchmark with regression detection | `criterion`/`tasty-bench` + CI alert on regression | Performance regression is a DoS vector |
+| CDDL completeness | `.cddl` files per era/protocol version | Serialization correctness across versions |
+| Reproducible builds | `nix build` in CI + hash verification | Build supply chain integrity |
+| .aiignore on critical paths | `.aiignore` excluding consensus/crypto directories | Mature AI governance — team knows where AI should NOT operate |
+
+**Recommendation adjustments for blockchain repos:**
+
+- Frame AI as **adversarial reviewer/challenger/auditor** on critical code — threat modeling, completeness checks, generator quality review, performance challenge
+- Frame AI as **quality driver** on documentation, test scaffolding, PR quality, issue decomposition
+- Frame AI as **code generator** only on boilerplate, serialization from specs, mechanical refactoring
+- Never recommend "increase AI co-authorship" on consensus/crypto code without qualifying scope
+- Recognize `.aiignore` excluding critical paths as a positive governance signal
+
+**Domain-specific risk flags:**
+
+| Risk | Condition | Severity |
+|------|-----------|----------|
+| No conformance testing | Formal spec detected but no conformance tests | 🔴 High |
+| No concurrency testing framework | Network/distributed code but no io-sim/dejafu | 🟡 Medium |
+| Formal spec stale | `.agda` files not modified in 6+ months while implementation changed | 🟡 Medium |
+| No benchmark regression detection | Performance-sensitive code without CI benchmarks | 🟡 Medium |
+
+### 7.2 Future Profiles
+
+Additional profiles can be defined for: web applications (npm threat model, runtime validation), libraries (API stability, documentation completeness), infrastructure/DevOps (IaC scanning, secret management). Each profile follows the same pattern: supplementary signals + recommendation adjustments + domain risk flags.
+
+---
+
+## 8. Automation Requirements
+
 
 ### 7.1 API Budget
 
@@ -433,7 +522,7 @@ Two agents scoring the same repository at the same point in time MUST produce id
 
 ---
 
-## 8. Connection to v3
+## 9. Connection to v3
 
 This is AAMM v4. Key changes from v3:
 

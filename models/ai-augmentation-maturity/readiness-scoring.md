@@ -45,10 +45,10 @@ Readiness = max(0, Readiness_raw - sum(applicable_penalties))
 |---|---|---|
 | No scanning AND no strategy | **-10** | No `dependabot.yml`/`renovate.json`, no lockfile pinning strategy, no security scanning in CI |
 | Partial scanning (wrong ecosystem) | **-5** | `dependabot.yml` exists but doesn't list primary language ecosystem (e.g., covers `github-actions` but not `npm` for a TypeScript repo) |
-| Ecosystem lacks tooling, team manages deps | **-5** | No automated CVE scanning available for primary language, but team uses active dependency management: `index-state` pinning (Haskell), curated package sets, lockfile + manual audit cycle. Applies to: Haskell/Cabal (no Dependabot support), Nix (flake.lock), and other ecosystems where Dependabot/Renovate don't operate. |
+| Ecosystem lacks tooling, team manages deps | **0** (risk flag only) | No automated CVE scanning available for primary language, but team uses active dependency management: `index-state` pinning (Haskell), curated package sets, lockfile + manual audit cycle. Applies to: Haskell/Cabal (no Dependabot support), Nix (flake.lock), and other ecosystems where Dependabot/Renovate don't operate. No penalty — teams cannot adopt tooling that doesn't exist. Flagged as risk for visibility. |
 | Scanning active for primary ecosystem | **0** | `dependabot.yml` with entry matching primary language, OR `renovate.json`, OR security scanning tool in CI (CodeQL, Trivy, Snyk, cargo-deny, npm audit, etc.) |
 
-**Rationale:** The original -10 binary penalty treated "Haskell repo where Dependabot doesn't support Hackage" identically to "TypeScript repo with 1,100 npm deps and no scanning." The graduated scale distinguishes between ecosystems where the tooling doesn't exist (reduced penalty) and ecosystems where it does but the team hasn't configured it (full penalty).
+**Principle:** Penalties are for things teams CAN fix but haven't. If no mature scanning tool exists for the ecosystem, the team is not negligent — the gap is flagged as a risk, not penalized. The graduated scale distinguishes between: negligence (tooling exists, not configured → -10 or -5), and ecosystem gaps (no tooling exists → 0 + risk flag).
 
 ---
 
@@ -404,6 +404,17 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 | Visual regression | UI renders consistently | Chromatic, Percy, BackstopJS |
 
 BDD frameworks (Cucumber, hspec) count as integration or unit depending on scope — they are a style, not a distinct category. A repo needs evidence of **distinct test strategies**, not just multiple framework names.
+
+**Blockchain domain profile — V2 sub-signals** (supplementary, reported alongside V2 score):
+
+| Sub-signal | How to detect | What it indicates |
+|-----------|--------------|-------------------|
+| Generator discipline | `cover`/`classify`/`tabulate`/`checkCoverage` in test files | Generators produce diverse, verified input distributions |
+| Custom generators | Explicit `Arbitrary` instances with `shrink` definitions | Generators are hand-crafted for domain correctness, not generic |
+| Conformance oracle | Test references to Agda/formal spec, `conformance/` directories | Tests verify against external specification, not just internal consistency |
+| Adversarial testing | Generator names containing `Adversarial`, `Malicious`, `Invalid`, `Corrupt` | Tests actively probe failure modes, not just happy paths |
+
+These sub-signals distinguish between "property tests exist" (V2 category count) and "property tests are effective" (generator quality). Both are detectable from GitHub API via file content sampling.
 
 ---
 

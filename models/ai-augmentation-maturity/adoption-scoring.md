@@ -83,20 +83,26 @@ Note: Some data (tree, PRs, workflows) is shared with Readiness collection. Tota
 
 ### AI Config Quality — Content-Category Checklist
 
-An AI config file satisfies Condition B when it contains substantive content in **≥ 3 of 6 categories:**
+An AI config file satisfies Condition B when it contains substantive content in **≥ 3 of 8 categories:**
 
 | # | Category | Examples of substantive content |
 |---|---|---|
 | 1 | **Architecture** | Module boundaries, dependency relationships, key abstractions, package structure |
 | 2 | **Conventions** | Naming patterns, formatting rules, style preferences, preferred approaches, anti-patterns |
 | 3 | **Testing** | Test frameworks, coverage expectations, test types, test conventions, how to run tests |
-| 4 | **Security** | Security-critical modules, trust boundaries, sensitive data flows, secret handling |
+| 4 | **Security** | Security-critical modules, trust boundaries, sensitive data flows, secret handling, where AI should NOT generate code |
 | 5 | **Delivery** | Versioning scheme, changelog format, release process, estimation approach, branching strategy |
 | 6 | **Operations** | Deployment topology, monitoring setup, runbook locations, environment configuration |
+| 7 | **Build system** | How to build, which toolchain versions, package manager specifics, environment setup, CI/CD conventions |
+| 8 | **Formal specification** | Which modules implement which spec rules, verification strategy, invariants that must hold, spec-to-code mapping |
 
-**How to check:** The agent reads the AI config file content and marks each category as present (1) or absent (0). A category is "present" if the file contains at least 2 sentences or a structured list addressing that topic. Score = count of categories present. If count ≥ 3, Condition B is satisfied.
+Categories 7-8 are especially relevant for Haskell/blockchain repos where build complexity (Nix + Cabal) and formal spec compliance are critical for AI effectiveness.
+
+**How to check:** The agent reads the AI config file content and marks each category as present (1) or absent (0). A category is "present" if the file contains at least 2 sentences or a structured list addressing that topic. Score = count of categories present. If count ≥ 3, Condition B is satisfied. The gate remains at ≥ 3 of 8 (not 3 of 6) — the additional categories increase opportunity, not the bar.
 
 This is deterministic: presence check, not quality judgment.
+
+**AI value framing in config:** The most effective AI configs guide AI toward its highest-value roles: adversarial review on critical code, quality improvement on docs/tests/PRs, and code generation on boilerplate. A Security category that tells AI "review this module for timing attacks" is more valuable than one that tells AI "generate code for this module."
 
 ### AI Signal Detection — 5 Layers (ADR-003)
 
