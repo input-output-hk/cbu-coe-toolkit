@@ -174,7 +174,9 @@ Ignore these paths in all tree analysis: `node_modules/`, `dist/`, `build/`, `.g
 | Mentioned in docs but not configured | 15 |
 | Neither present | 0 |
 
-**How to measure:** Search tree for linter config files (e.g., `.eslintrc.*`, `eslint.config.*`, `biome.json`, `.hlint.yaml`, `clippy.toml`, `.pylintrc`, `ruff.toml`, or equivalent) and formatter config files (e.g., `.prettierrc*`, `biome.json`, `.rustfmt.toml`, `fourmolu.yaml`, or equivalent). Tool choice is free. Check CI workflows for lint/format steps.
+**How to measure:** Search tree for linter config files (e.g., `.eslintrc.*`, `eslint.config.*`, `biome.json`, `.hlint.yaml`, `clippy.toml`, `.pylintrc`, `ruff.toml`, `.stan.toml`, or equivalent) and formatter config files (e.g., `.prettierrc*`, `biome.json`, `.rustfmt.toml`, `fourmolu.yaml`, or equivalent). Tool choice is free. Check CI workflows for lint/format steps.
+
+**"Custom rules" means:** For **linters**: config file with project-specific rules beyond defaults (disabled checks, custom patterns, severity overrides). For **formatters**: any config file with project-specific settings (indentation, line length, comma style, etc.) — a formatter config file IS custom rules because its presence means the team chose specific formatting standards. An empty or absent config file = defaults.
 
 ---
 
@@ -262,6 +264,8 @@ Navigate = sum(signal_score_i * signal_weight_i)
 
 **How to measure:** Check primary language. For TypeScript: parse `tsconfig.json` for `strict`, `strictNullChecks`, `noImplicitAny` flags. For Haskell/Rust: start at 100. For Python: estimate type hint coverage from sampled files (presence of `: type` annotations on function parameters).
 
+**Mixed-language caveat:** If >15% of source files are in a weakly-typed or untyped language (C, Assembly, JavaScript) — e.g., via FFI bindings — cap U1 at 85. The type-safe primary language cannot protect the untyped boundary code. This applies regardless of primary language.
+
 ---
 
 ### U2: Documentation Coverage (weight: 0.25)
@@ -278,7 +282,7 @@ Navigate = sum(signal_score_i * signal_weight_i)
 
 **How to measure:** Use the deterministic sample (Section 3). For each file, use regex to count:
 - **TypeScript:** `export` declarations and `/** */` JSDoc blocks preceding them
-- **Haskell:** exported functions (from module export list) and `-- |` / `-- ^` / `{- |` Haddock comments (line and block styles)
+- **Haskell:** top-level type signatures and `-- |` / `-- ^` / `{- |` / `{- ^` Haddock comments. If a module has no explicit export list, treat all top-level type signatures as public. If it has an export list, count only exported names.
 - **Rust:** `pub fn` / `pub struct` declarations and `///` doc comments
 - **Python:** `def` / `class` declarations and triple-quoted docstrings
 
@@ -332,7 +336,9 @@ Score = sum of points for sections present. Max 100.
 | Minimal schemas (only framework-required, e.g., DB migrations) | 25 |
 | No explicit schema definitions | 0 |
 
-**How to measure:** Search `package.json` / `Cargo.toml` / `.cabal` dependencies for schema libraries: `zod`, `io-ts`, `valibot`, `serde`, `aeson`, `pydantic`. Search tree for schema files: `.proto`, `.graphql`, `openapi.yaml`, `swagger.json`. Count and assess coverage.
+**How to measure:** Search tree for schema files: `.proto`, `.graphql`, `.cddl`, `openapi.yaml`, `swagger.json`. Search manifest dependencies for **schema/validation** libraries: `zod`, `io-ts`, `valibot` (TypeScript), `pydantic` (Python), `servant` + `servant-openapi3` (Haskell API schemas), `proto-lens` (Haskell protobuf). Count and assess coverage.
+
+**Note:** Serialization libraries (`aeson`, `serde`, `JSON.parse`) are NOT schema libraries. They encode/decode data but don't validate structure at boundaries. Only count libraries that enforce data shape contracts (validation, type-checked API definitions, or formal schema languages).
 
 ---
 
@@ -383,7 +389,21 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 | 1 category but well-organized | 50 |
 | Tests exist but no categorization | 25 |
 
-**How to measure:** Look for directory structure and framework detection. Categories: unit tests, integration tests, E2E tests (Playwright, Cypress, WebdriverIO, Puppeteer, Selenium, or equivalent), property-based tests (QuickCheck, Hedgehog, fast-check, proptest, or equivalent). Any framework counts — tool names are examples, not exhaustive.
+**How to measure:** Look for directory structure, framework detection, and dedicated CI jobs.
+
+**Recognized test categories** (a category is distinct if it tests a fundamentally different property):
+
+| Category | What it tests | Examples |
+|----------|--------------|---------|
+| Unit | Individual function correctness | Jest, Vitest, HUnit, Tasty, pytest, JUnit |
+| Integration | Component interaction, API contracts | Storybook + Playwright, database tests, Imp framework |
+| E2E | Full user flow across system boundary | Playwright, Cypress, WebdriverIO, Selenium, BrowserStack |
+| Property-based | Invariants hold across random inputs | QuickCheck, Hedgehog, fast-check, proptest |
+| Golden/snapshot | Output stability against known-good reference | Jest snapshots, golden file comparison |
+| Conformance | Implementation matches external spec | Formal spec compliance tests (e.g., vs Agda spec) |
+| Visual regression | UI renders consistently | Chromatic, Percy, BackstopJS |
+
+BDD frameworks (Cucumber, hspec) count as integration or unit depending on scope — they are a style, not a distinct category. A repo needs evidence of **distinct test strategies**, not just multiple framework names.
 
 ---
 
@@ -414,7 +434,9 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 | Coverage tool in dependencies but not configured | 30 |
 | No coverage tooling | 0 |
 
-**How to measure:** Check for coverage config (e.g., `c8`, `istanbul`/`nyc`, `vitest --coverage`, `cargo-tarpaulin`, `hpc`, `pytest-cov`, or equivalent). Check CI for coverage steps and threshold assertions. Any coverage tool counts.
+**How to measure:** Check for coverage config (e.g., `c8`, `istanbul`/`nyc`, `vitest --coverage`, `cargo-tarpaulin`, `hpc`, `pytest-cov`, SonarCloud, Codecov, or equivalent). Check CI for coverage steps and threshold assertions. Any coverage tool counts.
+
+**Haskell note:** `hpc` (Haskell Program Coverage) ships with GHC but is difficult to configure for multi-package `cabal.project` setups (no native cross-suite merging, limited CI integration). Score 30 ("in dependencies but not configured") if `hpc` or `cabal test --enable-coverage` appears in docs or scripts but doesn't run in CI. Score 0 only if coverage is completely absent from docs, scripts, and CI. This reflects that hpc availability ≠ hpc usability for large projects.
 
 ---
 
@@ -437,10 +459,14 @@ else:
 
 The agent uses the GitHub API language statistics endpoint (`GET /repos/{owner}/{repo}/languages`).
 
+**Infrastructure languages** (Nix, Shell, Makefile, Dockerfile, CMake) should be excluded from the language percentage calculation before applying these rules. They are build tooling, not application code. Only application/library languages count.
+
 **Rules:**
-1. **Single-language repo (>80% one language):** Score all signals using that language's conventions for thresholds (e.g., Type Safety starts at 100 for Haskell, checks `strict: true` for TypeScript).
-2. **Multi-language repo (two or more languages each >15%):** Score using the primary language's conventions. Note secondary languages in evidence.
+1. **Single-language repo (>60% one language after excluding infrastructure):** Score all signals using that language's conventions (e.g., Type Safety starts at 100 for Haskell, checks `strict: true` for TypeScript).
+2. **Multi-language repo (two or more application languages each >15%):** Score using the primary language's conventions. Note secondary languages in evidence.
 3. **No recognized language conventions:** Score using generic thresholds. The repo is not penalized.
+
+**Example:** A repo with 75% Haskell, 12% Nix, 8% Shell, 5% C → exclude Nix + Shell → 75% Haskell, 5% C → single-language (Haskell). A repo with 50% TypeScript, 30% Haskell, 20% Nix → exclude Nix → 50% TS, 30% Haskell → multi-language, primary = TypeScript.
 
 ---
 
@@ -452,9 +478,9 @@ The agent uses the GitHub API language statistics endpoint (`GET /repos/{owner}/
 
 **Navigate: 97.0** — Excellent monorepo structure (Yarn workspaces, 8 packages), Nix flake devShell, ESLint+Prettier with custom rules enforced in CI, comprehensive CI/CD (9 workflows). Only gap: no SECURITY.md (N8: 75).
 
-**Understand: 57.5** — TypeScript with `strictNullChecks`+`noImplicitAny` (U1: 85). JSDoc ~30-50% of exports (U2: 50). Good README + ARCHITECTURE.md but no ADRs (U4: 50). No runtime schemas at boundaries (U5: 0).
+**Understand: 57.5** — TypeScript with `strictNullChecks`+`noImplicitAny` (U1: 85). JSDoc ~30-50% of exports (U2: 50). README with 4/5 sections (U3: 80). ARCHITECTURE.md but no ADRs (U4: 50). No runtime schemas at boundaries (U5: 0).
 
-**Verify: 65.0** — Test ratio 0.371 (V1: 50). Three test categories: Jest/Vitest unit + WebdriverIO E2E + Cucumber BDD (V2: 100). CI runs tests on every PR (V3: 80). SonarCloud configured but no coverage thresholds (V4: 30).
+**Verify: 65.0** — Test ratio 0.371 (V1: 50). Three test categories: unit (Jest/Vitest), E2E (WebdriverIO), integration/BDD (Cucumber) (V2: 100). CI runs tests on every PR (V3: 80). SonarCloud configured but no coverage thresholds (V4: 30).
 
 **Penalty: -5** — Dependabot covers `github-actions` only, not npm (partial scanning — wrong ecosystem). Crypto wallet with 1,100+ transitive npm deps unmonitored.
 

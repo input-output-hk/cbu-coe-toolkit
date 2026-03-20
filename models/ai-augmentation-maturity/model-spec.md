@@ -190,7 +190,7 @@ Penalties reduce the Readiness composite for objectively dangerous behaviors. Th
 |---|---|---|
 | No scanning tool AND no alternative strategy | **-10** | TS repo with 1000+ npm deps, no Dependabot |
 | Scanning tool exists but doesn't cover primary ecosystem | **-5** | Dependabot covers github-actions only, not npm |
-| Ecosystem lacks mature scanning tools, but team has dependency management strategy | **-5** | Haskell with index-state pinning + CHaP overlay, but no `cabal-audit` |
+| Ecosystem lacks mature scanning tools, but team has dependency management strategy | **-5** | Haskell with index-state pinning + curated package overlay (no mature automated CVE scanning tool exists for Hackage) |
 | Scanning tool active for primary ecosystem | **0** | Dependabot npm configured with daily schedule |
 
 The graduated scale recognizes that (a) not all ecosystems have equally mature scanning tooling, and (b) teams that actively manage dependencies (lockfiles, pinning, curated overlays) are in a fundamentally different risk posture than teams that do nothing — even if automated CVE monitoring is absent.
