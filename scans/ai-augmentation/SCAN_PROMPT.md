@@ -10,9 +10,9 @@
 
 Before scanning any repo, read these documents in order:
 
-1. **Model spec:** `models/ai-augmentation-maturity-v3/model-spec.md` — what the stages, sub-levels, and quadrants mean
-2. **Adoption scoring:** `models/ai-augmentation-maturity-v3/adoption-scoring.md` — step-by-step scoring per dimension
-3. **Readiness scoring:** `models/ai-augmentation-maturity-v3/readiness-scoring.md` — R1-R4 metric-to-score mappings
+1. **Model spec:** `models/ai-augmentation-maturity/model-spec.md` — architecture, pillars, signals, stages, penalties
+2. **Adoption scoring:** `models/ai-augmentation-maturity/adoption-scoring.md` — 5 dimension decision trees, content-category checklist
+3. **Readiness scoring:** `models/ai-augmentation-maturity/readiness-scoring.md` — 17 signal scoring tables, formulas
 4. **Config:** `scans/ai-augmentation/config.yaml` — tracked repos, signal patterns, bot names
 5. **Previous results:** `scans/ai-augmentation/results/` — load the most recent snapshot for delta comparison
 

@@ -16,9 +16,9 @@ repo_list: models/config.yaml
 # Model Documents (agent reads these before scanning)
 # --------------------------------------------------------------------------
 model_documents:
-  spec: models/ai-augmentation-maturity-v3/model-spec.md
-  adoption_scoring: models/ai-augmentation-maturity-v3/adoption-scoring.md
-  readiness_scoring: models/ai-augmentation-maturity-v3/readiness-scoring.md
+  spec: models/ai-augmentation-maturity/model-spec.md
+  adoption_scoring: models/ai-augmentation-maturity/adoption-scoring.md
+  readiness_scoring: models/ai-augmentation-maturity/readiness-scoring.md
 
 # --------------------------------------------------------------------------
 # Results Location

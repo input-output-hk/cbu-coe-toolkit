@@ -1,11 +1,11 @@
 ---
 name: scan-ai-augmentation
-description: Run the monthly AAMM v3 AI Augmentation scan across tracked CBU repos. Scores Readiness (R1-R4) and Adoption (7 dimensions) per repo, generates Next Steps, and produces org-level summary.
+description: Run the AAMM AI Augmentation scan across tracked CBU repos. Scores Readiness (3 pillars, 17 signals) and Adoption (5 dimensions, 4 stages) per repo, generates recommendations.
 ---
 
 # Scan AI Augmentation
 
-Run the monthly AAMM v3 scan across all tracked repositories.
+Run the AAMM scan across tracked repositories.
 
 ## Prerequisites
 
@@ -14,22 +14,18 @@ Run the monthly AAMM v3 scan across all tracked repositories.
 
 ## Execution
 
-Follow the scan prompt exactly:
-
-1. **Read** `scans/ai-augmentation/SCAN_PROMPT.md` — the complete agent-executable instructions
-2. **Read** the three model documents referenced in the scan prompt:
-   - `models/ai-augmentation-maturity-v3/model-spec.md`
-   - `models/ai-augmentation-maturity-v3/adoption-scoring.md`
-   - `models/ai-augmentation-maturity-v3/readiness-scoring.md`
-3. **Read** `scans/ai-augmentation/config.yaml` for signal patterns and scan settings
-4. **Load** repo list from `models/config.yaml`
-5. **Execute** the 12-step scan flow defined in SCAN_PROMPT.md
-6. **Present** results to human operator for review before writing to disk
+1. **Read** the model documents:
+   - `models/ai-augmentation-maturity/model-spec.md`
+   - `models/ai-augmentation-maturity/readiness-scoring.md`
+   - `models/ai-augmentation-maturity/adoption-scoring.md`
+2. **Read** `scans/ai-augmentation/config.yaml` for tracked repos
+3. **Run** `scripts/aamm/scan-repo.sh owner/repo` per repo
+4. **Review** script output and override signals needing agent judgment
+5. **Present** results to human operator before writing to disk
 
 ## Output
 
-- Per-repo reports (box format + JSON)
-- Org-level summary
+- Per-repo `.md` + `.json` reports
 - Machine-readable snapshot: `scans/ai-augmentation/results/YYYY-MM.json`
 
 ## Important
@@ -43,10 +39,9 @@ Follow the scan prompt exactly:
 
 | File | Purpose |
 |------|---------|
-| `scans/ai-augmentation/SCAN_PROMPT.md` | Step-by-step scan instructions |
-| `scans/ai-augmentation/config.yaml` | Signal patterns, bot names, thresholds |
-| `models/ai-augmentation-maturity-v3/model-spec.md` | Stage definitions, quadrant model |
-| `models/ai-augmentation-maturity-v3/adoption-scoring.md` | Adoption scoring per dimension |
-| `models/ai-augmentation-maturity-v3/readiness-scoring.md` | Readiness scoring (R1-R4) |
-| `models/config.yaml` | Tracked repo list |
+| `models/ai-augmentation-maturity/model-spec.md` | Architecture, pillars, signals, stages, penalties |
+| `models/ai-augmentation-maturity/readiness-scoring.md` | 17 signal scoring tables, formulas |
+| `models/ai-augmentation-maturity/adoption-scoring.md` | 5 dimension decision trees |
+| `scans/ai-augmentation/config.yaml` | Tracked repos, model references |
+| `scripts/aamm/scan-repo.sh` | Automated scan pipeline |
 | `notion/page-registry.yaml` | Notion page IDs for publishing |
