@@ -91,13 +91,17 @@ For full scoring methodology, see `models/ai-augmentation-maturity/model-spec.md
 
 ```
 scripts/aamm/scan-repo.sh owner/repo [overrides.json]
-  ├── collect-all.sh        → GitHub API data collection
-  ├── score-readiness.sh    → 17 signals → JSON
-  ├── score-adoption.sh     → 5 dimensions → JSON
-  └── generate-report.sh    → .md + .json report
+  ├── collect-all.sh        → GitHub API data collection (incl. blockchain domain signals)
+  ├── score-readiness.sh    → 17 signals + domain profile → JSON
+  ├── score-adoption.sh     → 5 dimensions (8 content categories) → JSON
+  ├── review-scores.sh      → Principal engineer validation (language/domain-aware)
+  ├── generate-report.sh    → .md + .json report (with recommendations)
+  └── cross-repo-learn.sh   → Cross-repo best practice detection (run after batch scan)
 ```
 
 Scripts run non-interactively. No confirmations. Agent delivers the final report.
+
+**Plan files:** Each model directory has a `plan.md` with prioritized backlog. Read it first, update it when completing work.
 
 ## Tracked Repositories
 
@@ -107,13 +111,31 @@ GitHub orgs: IntersectMBO, input-output-hk, cardano-scaling, HarmonicLabs.
 
 ## Agent Instructions
 
-1. **Read the model files before scanning.** Load `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, and `adoption-scoring.md`.
-2. **Use `scripts/aamm/scan-repo.sh`** for automated scans. Override signal scores that need agent judgment via `overrides.json`.
-3. **Write results as JSON** to `scans/*/results/YYYY-MM.json`.
-4. **Never publish to Notion without human approval.**
-5. **Treat model definitions as mutable drafts.** Flag edge cases and inconsistencies.
-6. **Before every commit — check for secrets.** No API keys, tokens, passwords, `.env` files, or credentials.
-7. **When unsure, ask.**
+1. **Quality gate** — invoke the `quality-gate` skill before declaring any task complete. Skip for questions, explanations, and simple lookups.
+2. **Read `plan.md` first.** Each model has a `plan.md` (e.g., `models/ai-augmentation-maturity/plan.md`) with prioritized backlog, current status, and design decisions. Read it before starting any work to understand what's done, what's in progress, and what's next.
+2. **Read the model files before scanning.** Load `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, and `adoption-scoring.md`.
+3. **Use `scripts/aamm/scan-repo.sh`** for automated scans. The pipeline is 5 steps: collect → score-readiness → score-adoption → review-scores → generate-report. Override signal scores that need agent judgment via `overrides.json`.
+4. **Update `plan.md` when completing work.** Move items from Backlog → Done, add new items discovered during implementation.
+5. **Write results as JSON** to `scans/*/results/YYYY-MM.json`.
+6. **Never publish to Notion without human approval.**
+7. **Treat model definitions as mutable drafts.** Flag edge cases and inconsistencies.
+8. **Before every commit — check for secrets.** No API keys, tokens, passwords, `.env` files, or credentials.
+9. **When unsure, ask.**
+
+## Peer Review Gate
+
+All work must pass peer review before delivery. This is mandatory, not optional.
+
+- **Checkpoint 1 (Design):** Before implementing non-trivial changes, invoke the
+  peer-review skill with type=design. May be skipped with explicit justification.
+- **Checkpoint 2 (Implementation):** After writing code/spec changes, invoke the
+  peer-review skill with type=implementation. May be skipped with explicit justification.
+- **Checkpoint 3 (Output):** After producing any deliverable, invoke the peer-review
+  skill with type=output. Never skipped. Must score ≥9.0/10 (conditional pass at
+  8.5-8.9 if all objections are cosmetic).
+
+Skipped checkpoints are audited at checkpoint 3. See `skills/peer-review/SKILL.md` for the
+full rubric, personas, escalation rules, and context requirements.
 
 ## Source of Truth Hierarchy
 
