@@ -178,7 +178,7 @@ seconds per task. The trade-off is worth it for anything non-trivial.
 
 ## Credits
 
-Built from a conversation in `#cbu-coe-chat` (March 2026):
+Built from a conversation in `#ai-collaboration-circles` (March 2026):
 
 - **Dorin Solomon** — self-scoring technique, tips catalog, CoE resource vision
 - **Ivan Irakoze** — 7-dimension rubric, first skill implementation ([claude-self-score](https://github.com/augmentedivan/claude-self-score))
