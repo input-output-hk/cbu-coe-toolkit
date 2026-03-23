@@ -17,7 +17,7 @@ Three measurement instruments, each answering a different question:
 
 | Model | Question | Status |
 |---|---|---|
-| **AI Augmentation Maturity (AAMM)** | Have you institutionalised AI? | Active |
+| **AI Augmentation Maturity (AAMM)** | Have you institutionalised AI? | Draft |
 | **Capability Maturity** | Is your engineering practice solid? | Draft |
 | **Engineering Vitals** | Is the work delivering value? | External (Power BI) |
 
