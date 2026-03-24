@@ -40,7 +40,8 @@ cbu-coe-toolkit/
 │   │   ├── config.yaml               # Tracked repos, orgs, model references
 │   │   └── results/                  # Machine-readable monthly snapshots (YYYY-MM.json)
 │   └── capability-maturity/
-├── skills/                           # Claude Code Skills (to be built)
+├── skills/                           # Claude Code Skills
+│   └── quality-gate/SKILL.md        # Universal quality gate (self-score + iterate)
 ├── notion/
 │   ├── page-registry.yaml            # All Notion page IDs in one place
 │   └── publishing-guide.md
