@@ -1,32 +1,37 @@
-<!-- Scope: Decision record for adopting a three-layer knowledge capture system across agent sessions. -->
-
-# ADR-001: Three-Layer Knowledge Capture for Agent Sessions
+# ADR-001: Three-Layer Knowledge Capture
 
 **Date:** 2026-03-13
 **Status:** Accepted
-**Context session:** Initial repo scaffolding — discussing how to preserve learnings across agent interactions.
+**Confidence:** High
 
 ## Context
 
-Every conversation between a human operator and an AI agent produces insights — edge cases, technical discoveries, design rationale — that are lost when the session ends. The next agent starts from zero plus whatever static content exists in repo files. CLAUDE.md provides starting context but has no mechanism for accumulated operational knowledge.
+Work across contributors and agent sessions produces insights — edge cases, technical discoveries, design rationale — that are lost when a session ends. The next contributor starts from whatever static content exists in repo files. CLAUDE.md provides starting context but has no mechanism for accumulated operational knowledge.
 
-The system needs to capture learnings through agents proposing updates as part of their normal workflow, rather than depending on manual documentation effort.
+## Decision drivers
+
+- Knowledge continuity across contributors without manual documentation overhead
+- Lightweight capture that integrates into existing workflows
+- Human review as quality gate before anything is committed
+
+## Considered alternatives
+
+| Option | Pros | Cons |
+|---|---|---|
+| **Three-layer system** | Structured, reviewable, low overhead | learnings.md grows over time |
+| Wiki / Confluence only | Familiar to teams | Disconnected from code, no review gate |
+| CLAUDE.md only | Simple | Grows unbounded, no separation of concerns |
 
 ## Decision
 
-Adopt a three-layer knowledge capture system in both `cbu-coe` and `cbu-coe-toolkit`:
+Adopt a three-layer knowledge capture system:
 
-1. **`docs/decisions/`** — Architecture Decision Records (ADRs). One file per significant decision, numbered sequentially. For *why* choices were made. Agents read these to understand constraints they should not re-litigate.
-
-2. **`docs/learnings.md`** — Append-only operational learnings log. Dated entries for insights, edge cases, things that failed, things that surprised us. For *what we discovered along the way*.
-
-3. **Session handoff protocol in CLAUDE.md** — Every agent is instructed: before ending a session, propose specific additions to `learnings.md` and/or new ADR files. The human operator approves or edits before committing. This makes knowledge capture automatic.
-
-Each file in `docs/` carries a 1–2 line scope comment at the top explaining what belongs there.
+1. **`docs/decisions/`** — Architecture Decision Records. One file per significant decision. Captures *why* choices were made.
+2. **`docs/learnings.md`** — Append-only operational insights log. Captures *what was learned along the way*.
+3. **Session handoff protocol** — Contributors propose additions to `learnings.md` and/or new ADR files before ending a session. The repo owner approves before committing.
 
 ## Consequences
 
-- Every agent session has a lightweight "save what you learned" step at the end.
-- Future agents get richer context beyond just CLAUDE.md — they can read decisions and learnings.
-- Trade-off: learnings.md will grow over time and may need periodic summarization or archiving.
-- Trade-off: agents may over-propose entries. The human review step prevents noise accumulation.
+- **Positive:** Every session has a lightweight "capture what you learned" step. Future contributors get richer context.
+- **Negative:** `learnings.md` will grow and may need periodic summarization or archiving.
+- **Risks:** Over-contribution of low-value entries. Mitigated by human review gate.

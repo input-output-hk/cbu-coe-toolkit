@@ -1,152 +1,99 @@
 # CLAUDE.md — cbu-coe-toolkit
 
-> Root context file for AI agents working in this repository.
+> Context file for AI agents. Under 200 lines. Use progressive disclosure.
 
-## Repository Identity
+## Project
 
-- **Repo:** `cbu-coe-toolkit`
-- **Purpose:** Measurement machinery — maturity models, scan prompts, scoring methodology, results history, and automation scripts
-- **Owner:** CoE (Centre of Excellence), Cardano Business Unit (CBU) at IOG
-- **Primary consumers:** CoE operators and AI agents running scans
-- **Sibling repo:** `cbu-coe` (knowledge, guidance, templates — the materials teams actually use)
+- **Repo:** `cbu-coe-toolkit` — measurement models, scoring scripts, scan automation
+- **Owner:** Centre of Excellence (CoE), Cardano Business Unit, IOG
+- **Consumers:** CoE operators and AI agents running scans
+- **Sibling:** [`cbu-coe`](https://github.com/input-output-hk/cbu-coe) — guidance, templates, skills for teams
 
-## What This Repo Contains
+## Structure
 
 ```
 cbu-coe-toolkit/
-├── CLAUDE.md                         ← You are here
-├── models/                           # Measurement model definitions (source of truth)
-│   ├── ai-augmentation-maturity/     # AAMM — two-axis AI readiness + adoption model
-│   │   ├── model-spec.md            # Architecture, pillars, signals, stages, penalties
-│   │   ├── readiness-scoring.md     # 17 signal scoring tables, formulas, worked examples
-│   │   └── adoption-scoring.md      # 5 dimension decision trees, content-category checklist
-│   ├── engineering-vitals/
-│   │   ├── model.md                  # KPIs, thresholds, data sources
-│   │   └── changelog.md
-│   └── capability-maturity/
-│       ├── model.md                  # Engineering practices maturity
-│       └── changelog.md
-├── scripts/aamm/                     # Automation scripts for AAMM scans
-│   ├── scan-repo.sh                  # Single command: ./scan-repo.sh owner/repo
-│   ├── collect-readiness.sh          # GitHub API data collection (readiness signals)
-│   ├── collect-adoption.sh           # 5-layer AI detection (ADR-003)
-│   ├── collect-all.sh                # Orchestrator for both collectors
-│   ├── score-readiness.sh            # Signal→score mapping, composites, penalties
-│   ├── score-adoption.sh             # Decision trees, Condition A/B, stages
-│   └── generate-report.sh            # Score JSON → .md + .json report
-├── scans/                            # Scan execution and history
-│   ├── ai-augmentation/
-│   │   ├── SCAN_PROMPT.md            # Monthly scan prompt (agent-ready)
-│   │   ├── config.yaml               # Tracked repos, orgs, model references
-│   │   └── results/                  # Machine-readable monthly snapshots (YYYY-MM.json)
-│   └── capability-maturity/
-├── skills/                           # Claude Code Skills
-│   └── quality-gate/SKILL.md        # Universal quality gate (self-score + iterate)
-├── notion/
-│   ├── page-registry.yaml            # All Notion page IDs in one place
-│   └── publishing-guide.md
+├── models/                        # Model definitions (source of truth)
+│   ├── ai-augmentation-maturity/  # AAMM — readiness + adoption, two-axis
+│   ├── engineering-vitals/        # KPIs, thresholds (Power BI external)
+│   └── capability-maturity/       # Engineering practices (draft)
+├── scripts/aamm/                  # Scan automation pipeline
+├── scans/ai-augmentation/         # Config, prompts, results (YYYY-MM.json)
+├── skills/                        # Claude Code skills for CoE operators
+├── notion/                        # Page registry, publishing guide
 └── docs/
-    ├── decisions/                    # Architecture Decision Records (ADRs)
-    ├── learnings.md                  # Append-only operational insights log
-    └── evolution-log.md              # Chronological record of significant changes
+    ├── decisions/                 # Architecture Decision Records
+    └── learnings.md               # Operational insights log
 ```
 
-## The Three-Model Architecture
+## Three-model architecture
 
-| Model | Measures | Status |
+| Model | Question | Location |
 |---|---|---|
-| **Engineering Vitals Dashboard** | On-time delivery, value, cycle time, defects | Exists in Power BI (external) |
-| **AI Augmentation Model (AAMM)** | Institutional AI readiness + adoption per repo | `models/ai-augmentation-maturity/` |
-| **Capability Maturity Model** | Engineering practices, processes, standards | **DRAFT** — `models/capability-maturity/` |
+| **AI Augmentation (AAMM)** | Is AI institutionalised? | `models/ai-augmentation-maturity/` |
+| **Capability Maturity** | Are engineering practices solid? | `models/capability-maturity/` (draft) |
+| **Engineering Vitals** | Is work delivering value? | Power BI (external) |
 
-### Critical Design Principles
+Design principles:
+- Stages are **informative**, not judgment. The goal is showing teams what good looks like.
+- Engineering Vitals measures value delivery. This toolkit measures AI *presence*, not AI *value*.
+- No discretionary adjustments. The formula output is the score.
 
-1. **AI Augmentation stages are informative/educational, not judgment.** The goal is clarity — showing teams what good looks like.
-2. **Engineering Vitals is the authoritative measure of value delivery.** This toolkit measures AI *presence*, not AI *value*.
-3. **Capability Maturity covers non-AI engineering practices** — the prerequisites for AI to be effective.
-4. **Cross-model synthesis is done by agents under human review.**
+## AAMM overview
 
-## AI Augmentation Model — Key Concepts
+Two axes per repo:
+- **Readiness (0–100)** — structural suitability for AI. 3 pillars: Navigate (35%), Understand (35%), Verify (30%). 17 signals.
+- **Adoption (0–100)** — active AI usage. 5 dimensions, 4 stages: None → Configured → Active → Integrated.
 
-### Two-Axis Architecture
+Quadrant: Traditional | Fertile Ground | Risky Acceleration | AI-Native.
 
-AAMM is a two-axis model:
-- **AI Readiness (0-100)** — Is this codebase structurally suitable for AI collaboration? Scored via 3 pillars: Navigate (35%), Understand (35%), Verify (30%). 17 signals total.
-- **AI Adoption (0-100)** — Is AI actively used in workflows? 5 dimensions: Code, Testing, Security, Delivery, Governance. 4 stages: None → Configured → Active → Integrated.
+Full methodology: `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, `adoption-scoring.md`.
 
-The two axes form a quadrant: Traditional, Fertile Ground, Risky Acceleration, AI-Native.
-
-### Key Scoring Rules
-
-- **No discretionary adjustments.** The formula output is the score.
-- **No language bonuses.** Universal signals are language-aware where needed.
-- Stage 1 (Configured) requires **two conditions**: (A) practice active + (B) AI config with ≥3 of 6 content categories.
-- Stages are **cumulative** — Active requires Configured.
-- 3 penalties: PRs without review (-10), no vulnerability monitoring (-10 or -5), no branch protection (-5).
-- **5-layer AI detection:** Tree → Commits → PR Author → PR Body → Submodules (ADR-003).
-- API budget: ≤ 50 calls/repo.
-
-For full scoring methodology, see `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, and `adoption-scoring.md`.
-
-### Automation Scripts
+## Scan pipeline
 
 ```
 scripts/aamm/scan-repo.sh owner/repo [overrides.json]
-  ├── collect-all.sh        → GitHub API data collection (incl. blockchain domain signals)
-  ├── score-readiness.sh    → 17 signals + domain profile → JSON
-  ├── score-adoption.sh     → 5 dimensions (8 content categories) → JSON
-  ├── review-scores.sh      → Principal engineer validation (language/domain-aware)
-  ├── generate-report.sh    → .md + .json report (with recommendations)
-  └── cross-repo-learn.sh   → Cross-repo best practice detection (run after batch scan)
+  → collect-all.sh          GitHub API data collection
+  → score-readiness.sh      17 signals → JSON
+  → score-adoption.sh       5 dimensions → JSON
+  → review-scores.sh        Language/domain-aware validation
+  → generate-report.sh      .md + .json report with recommendations
 ```
 
-Scripts run non-interactively. No confirmations. Agent delivers the final report.
+Non-interactive. No confirmations. Results go to `scans/ai-augmentation/results/YYYY-MM.json`.
 
-**Plan files:** Each model directory has a `plan.md` with prioritized backlog. Read it first, update it when completing work.
+Tracked repos: 29 across 4 orgs. See `scans/ai-augmentation/config.yaml`.
 
-## Tracked Repositories
+## Source of truth
 
-29 repos across 4 GitHub orgs. Full list in `scans/ai-augmentation/config.yaml`.
+1. **This repo (GitHub)** — model definitions, scoring rules, results
+2. **Notion** — display layer, rendered from GitHub content
+3. When they diverge, GitHub wins.
 
-GitHub orgs: IntersectMBO, input-output-hk, cardano-scaling, HarmonicLabs.
+## Rules
 
-## Agent Instructions
+1. **Never commit to `main`.** Branch → PR → owner review → merge.
+2. **Never expose secrets.** No printing, logging, or committing API keys, tokens, passwords, or env variable values. Reference by name only (`$GITHUB_TOKEN`).
+3. **Check for secrets before every commit.** Run `git diff --cached` and review every line.
+4. **Quality gate.** Invoke the `quality-gate` skill before declaring any task complete. Skip for questions, explanations, and simple lookups.
+5. **Read `plan.md` first.** Each model directory has a `plan.md` with prioritized backlog. Read it before starting work, update it when completing work.
+6. **Read model files before scanning.** Load `model-spec.md`, `readiness-scoring.md`, `adoption-scoring.md`.
+7. **Use `scripts/aamm/scan-repo.sh`** for scans. Override signals via `overrides.json`.
+8. **Results as JSON** to `scans/*/results/YYYY-MM.json`.
+9. **Never publish to Notion without human approval.**
+10. **Model definitions are mutable drafts.** Flag edge cases and inconsistencies.
+11. **PRs explain why**, not just what.
+12. **When unsure, ask.**
 
-1. **Never commit directly to `main`.** Always create a feature branch, push it, and open a PR. Only Dorin (repo owner) merges PRs into `main` after review. No exceptions.
-2. **Never expose secrets.** Do not print, log, echo, commit, or include in any output: API keys, tokens, passwords, environment variable values, private keys, or credentials. Reference them by name only (e.g., `$GITHUB_TOKEN`), never by value.
-2. **Quality gate** — invoke the `quality-gate` skill before declaring any task complete. Skip for questions, explanations, and simple lookups.
-2. **Read `plan.md` first.** Each model has a `plan.md` (e.g., `models/ai-augmentation-maturity/plan.md`) with prioritized backlog, current status, and design decisions. Read it before starting any work to understand what's done, what's in progress, and what's next.
-2. **Read the model files before scanning.** Load `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, and `adoption-scoring.md`.
-3. **Use `scripts/aamm/scan-repo.sh`** for automated scans. The pipeline is 5 steps: collect → score-readiness → score-adoption → review-scores → generate-report. Override signal scores that need agent judgment via `overrides.json`.
-4. **Update `plan.md` when completing work.** Move items from Backlog → Done, add new items discovered during implementation.
-5. **Write results as JSON** to `scans/*/results/YYYY-MM.json`.
-6. **Never publish to Notion without human approval.**
-7. **Treat model definitions as mutable drafts.** Flag edge cases and inconsistencies.
-8. **Before every commit — check for secrets.** No API keys, tokens, passwords, `.env` files, or credentials.
-9. **When unsure, ask.**
+## Session handoff
 
-## Peer Review Gate
+Before ending a session, propose knowledge capture:
 
-All work must pass peer review before delivery. This is mandatory, not optional.
+1. **Learnings** — draft entries for `docs/learnings.md`.
+2. **Decisions** — if significant choices were made, draft an ADR following `docs/decisions/000-template.md`.
+3. **Present to the operator for review.** Do not commit without approval.
 
-- **Checkpoint 1 (Design):** Before implementing non-trivial changes, invoke the
-  peer-review skill with type=design. May be skipped with explicit justification.
-- **Checkpoint 2 (Implementation):** After writing code/spec changes, invoke the
-  peer-review skill with type=implementation. May be skipped with explicit justification.
-- **Checkpoint 3 (Output):** After producing any deliverable, invoke the peer-review
-  skill with type=output. Never skipped. Must score ≥9.0/10 (conditional pass at
-  8.5-8.9 if all objections are cosmetic).
+## References
 
-Skipped checkpoints are audited at checkpoint 3. See `skills/peer-review/SKILL.md` for the
-full rubric, personas, escalation rules, and context requirements.
-
-## Source of Truth Hierarchy
-
-1. **This repo (GitHub)** → model definitions, scoring rules, scan prompts, results.
-2. **Notion** → display/presentation layer, rendered from GitHub content.
-3. **When they diverge, GitHub wins.**
-
-## Key References
-
-- Confluence CoE page: `https://input-output.atlassian.net/wiki/spaces/IOE/pages/5700845586/`
-- Sibling repo: `cbu-coe` (knowledge, guidance, templates)
+- [Confluence CoE page](https://input-output.atlassian.net/wiki/spaces/IOE/pages/5700845586/)
+- Sibling repo: `cbu-coe`
