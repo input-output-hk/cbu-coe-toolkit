@@ -14,7 +14,7 @@ Three measurement instruments, each answering a different question:
 
 | Model | Question | Status |
 |---|---|---|
-| **[AI Augmentation Maturity (AAMM)](models/ai-augmentation-maturity/)** | Is AI institutionalised in this repo? | Active |
+| **[AI Augmentation Maturity (AAMM)](models/ai-augmentation-maturity/)** | Is AI institutionalised in this repo? | Draft |
 | **[Capability Maturity](models/capability-maturity/)** | Are engineering practices solid? | Draft |
 | **[Engineering Vitals](models/engineering-vitals/)** | Is work delivering value? | External (Power BI) |
 
