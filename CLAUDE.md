@@ -112,7 +112,8 @@ GitHub orgs: IntersectMBO, input-output-hk, cardano-scaling, HarmonicLabs.
 
 ## Agent Instructions
 
-1. **Quality gate** — invoke the `quality-gate` skill before declaring any task complete. Skip for questions, explanations, and simple lookups.
+1. **Never commit directly to `main`.** Always create a feature branch, push it, and open a PR. Only Dorin (repo owner) merges PRs into `main` after review. No exceptions.
+2. **Quality gate** — invoke the `quality-gate` skill before declaring any task complete. Skip for questions, explanations, and simple lookups.
 2. **Read `plan.md` first.** Each model has a `plan.md` (e.g., `models/ai-augmentation-maturity/plan.md`) with prioritized backlog, current status, and design decisions. Read it before starting any work to understand what's done, what's in progress, and what's next.
 2. **Read the model files before scanning.** Load `models/ai-augmentation-maturity/model-spec.md`, `readiness-scoring.md`, and `adoption-scoring.md`.
 3. **Use `scripts/aamm/scan-repo.sh`** for automated scans. The pipeline is 5 steps: collect → score-readiness → score-adoption → review-scores → generate-report. Override signal scores that need agent judgment via `overrides.json`.
