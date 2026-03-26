@@ -14,7 +14,7 @@ This repo contains the measurement machinery for the CBU Centre of Excellence �
 - **Model definitions** — scoring rules, signal thresholds, stage criteria (see `models/`)
 - **Scan scripts** — automation for data collection and scoring (see `scripts/`)
 - **Results** — monthly scan snapshots (see `scans/`)
-- **Skills** — Claude Code skills for CoE operators (see `skills/`)
+- **Skills** — Claude Code skills for CoE operators (see `.claude/skills/`)
 - **ADRs** — decisions that affect models or methodology (see `docs/decisions/`)
 
 ## What belongs in cbu-coe

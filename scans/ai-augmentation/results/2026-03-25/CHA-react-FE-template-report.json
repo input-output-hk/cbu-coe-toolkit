@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "model_version": "1.0",
+    "scan_date": "2026-03-25",
+    "scanned_by": "CoE (Dorin Solomon)"
+  },
+  "repository": {
+    "full_name": "input-output-hk/CHA-react-FE-template",
+    "description": null,
+    "default_branch": "main",
+    "primary_language": "TypeScript",
+    "size_kb": 10439,
+    "license": null,
+    "stars": 2,
+    "open_issues": 2,
+    "private": false
+  },
+  "readiness": {
+    "composite": 24.16,
+    "raw": 29.16,
+    "penalties_total": -5,
+    "constraints_applied": [],
+    "pillars": {
+      "navigate": {
+        "score": 35.95,
+        "weight": 0.35,
+        "signals": {
+          "N1_file_organization": {
+            "score": 50,
+            "weight": 0.12,
+            "evidence": "max_depth=3, directories=8"
+          },
+          "N2_file_granularity": {
+            "score": 100,
+            "weight": 0.13,
+            "evidence": "median_lines=32, large_files=0, per_file_penalty=-0"
+          },
+          "N3_module_boundaries": {
+            "score": 25,
+            "weight": 0.15,
+            "evidence": "workspace_files=0, package_manifests=0"
+          },
+          "N4_separation_of_concerns": {
+            "score": 25,
+            "weight": 0.12,
+            "evidence": "top_level_dirs=2 (heuristic — override recommended)"
+          },
+          "N5_code_consistency": {
+            "score": 0,
+            "weight": 0.13,
+            "evidence": "linter=0, formatter=0, ci_enforced=0, configs=0"
+          },
+          "N6_cicd_pipeline": {
+            "score": 20,
+            "weight": 0.15,
+            "evidence": "workflows=1, has_build=0, has_deploy=0, days_since_push=106"
+          },
+          "N7_reproducible_env": {
+            "score": 60,
+            "weight": 0.12,
+            "evidence": "flake=0, flake_lock=0, docker=0, lockfile=1"
+          },
+          "N8_repo_foundations": {
+            "score": 0,
+            "weight": 0.08,
+            "evidence": "codeowners=0, gitignore_cats=0(10), security_md=0"
+          }
+        }
+      },
+      "understand": {
+        "score": 30.25,
+        "weight": 0.35,
+        "signals": {
+          "U1_type_safety": {
+            "score": 40,
+            "weight": 0.30,
+            "evidence": "TypeScript, tsconfig exists but not fetched — override recommended"
+          },
+          "U2_doc_coverage": {
+            "score": 25,
+            "weight": 0.25,
+            "evidence": "Not sampled — requires agent file content analysis. Override recommended."
+          },
+          "U3_readme_substance": {
+            "score": 80,
+            "weight": 0.15,
+            "evidence": "readme_lines=57, desc=1, setup=1, usage=1, arch=0, contrib=1"
+          },
+          "U4_architecture_docs": {
+            "score": 0,
+            "weight": 0.15,
+            "evidence": "adrs=0, architecture_md=0"
+          },
+          "U5_schema_definitions": {
+            "score": 0,
+            "weight": 0.15,
+            "evidence": "schema_files=0 (heuristic — override recommended for dep-based schemas like zod/io-ts)"
+          }
+        }
+      },
+      "verify": {
+        "score": 20.00,
+        "weight": 0.30,
+        "hard_gate": "PASS (1 test files)",
+        "signals": {
+          "V1_test_source_ratio": {
+            "score": 0,
+            "weight": 0.30,
+            "evidence": "ratio=.055 (1 test / 18 source)"
+          },
+          "V2_test_categorization": {
+            "score": 25,
+            "weight": 0.20,
+            "evidence": "detected_categories=0 [] (heuristic — override recommended)"
+          },
+          "V3_ci_test_execution": {
+            "score": 50,
+            "weight": 0.30,
+            "evidence": "ci_test=1, ci_blocking=0"
+          },
+          "V4_coverage_config": {
+            "score": 0,
+            "weight": 0.20,
+            "evidence": "coverage_tool=0, threshold=0"
+          }
+        }
+      }
+    },
+    "penalties": {
+      "prs_without_review": {
+        "unreviewed": 2,
+        "total_checked": 8,
+        "applied": false,
+        "impact": -0
+      },
+      "no_vulnerability_monitoring": {
+        "dependabot": 0,
+        "renovate": 0,
+        "covers_primary": 0,
+        "ci_security": 0,
+        "dep_strategy": 1,
+        "status": "ecosystem lacks tooling, team manages deps (risk flag only)",
+        "applied": false,
+        "impact": -0
+      },
+      "no_branch_protection": {
+        "status": "not_found",
+        "applied": true,
+        "impact": -5
+      }
+    }
+  },
+  "adoption": {
+    "composite": 0,
+    "total_ai_signals": 1,
+    "detection_layers": {
+      "L1_tree": {
+        "count": 0,
+        "files": ""
+      },
+      "L2_commits": {
+        "count": 0
+      },
+      "L3_pr_author": {
+        "copilot_swe": 0,
+        "coderabbit": 0,
+        "copilot": 0,
+        "total": 0
+      },
+      "L4_pr_body": {
+        "count": 1
+      },
+      "L5_submodules": {
+        "count": 0,
+        "inaccessible": ""
+      }
+    },
+    "dimensions": {
+      "code": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.25,
+        "condition_a": {
+          "met": false,
+          "evidence": "linter=0, codeowners=0"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Architecture + Conventions"
+        },
+        "annotation": "No AI presence"
+      },
+      "testing": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.25,
+        "condition_a": {
+          "met": true,
+          "evidence": "test execution found in CI workflows"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Testing category"
+        },
+        "annotation": "Practice active, no AI config"
+      },
+      "security": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.20,
+        "condition_a": {
+          "met": false,
+          "evidence": "no security scanning detected"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Security category"
+        },
+        "annotation": "No AI presence"
+      },
+      "delivery": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.15,
+        "condition_a": {
+          "met": false,
+          "evidence": "build_workflow=false, issues=true (open=2)"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Delivery category"
+        },
+        "annotation": "No AI presence"
+      },
+      "governance": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.15,
+        "condition_a": {
+          "met": false,
+          "evidence": "no AI config files"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no usage expectations or .aiignore"
+        },
+        "annotation": "No AI presence"
+      }
+    },
+    "annotations": [
+      "Code: No AI presence",
+      "Testing: Practice active, no AI config",
+      "Security: No AI presence",
+      "Delivery: No AI presence",
+      "Governance: No AI presence"
+    ],
+    "risk_flags": [
+      {
+        "risk": "Active without foundation",
+        "severity": "medium",
+        "detail": "AI activity signals found but Configured gate not met (no substantive AI config)"
+      }
+    ]
+  },
+  "quadrant": "Traditional"
+}

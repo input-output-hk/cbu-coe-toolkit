@@ -10,7 +10,7 @@
 
 Before scanning any repo, read these documents in order:
 
-1. **Model spec:** `models/ai-augmentation-maturity/model-spec.md` — architecture, pillars, signals, stages, penalties
+1. **Model spec:** `models/ai-augmentation-maturity/README.md` — architecture, pillars, signals, stages, penalties
 2. **Adoption scoring:** `models/ai-augmentation-maturity/adoption-scoring.md` — 5 dimension decision trees, content-category checklist
 3. **Readiness scoring:** `models/ai-augmentation-maturity/readiness-scoring.md` — 17 signal scoring tables, formulas
 4. **Config:** `scans/ai-augmentation/config.yaml` — tracked repos, signal patterns, bot names
@@ -234,8 +234,8 @@ If no previous snapshot: "First v3 assessment"
 
 For each repo, produce:
 
-1. **Human-readable report** — the box format from model-spec.md Section 8.1
-2. **Machine-readable JSON** — matching the schema in model-spec.md Section 9
+1. **Human-readable report** — the box format from README.md Section 8.1
+2. **Machine-readable JSON** — matching the schema in README.md Section 9
 
 Write JSON to: `scans/ai-augmentation/results/YYYY-MM.json`
 
@@ -243,7 +243,7 @@ Write JSON to: `scans/ai-augmentation/results/YYYY-MM.json`
 
 ### Step 10: Generate Org-Level Summary
 
-After all repos are scored, produce the org-level summary (model-spec.md Section 8.2):
+After all repos are scored, produce the org-level summary (README.md Section 8.2):
 
 - Quadrant distribution
 - Portfolio view (all repos ranked by Readiness and Adoption)
@@ -351,7 +351,7 @@ Wait for approval before proceeding.
 
 On human approval:
 1. Look up page IDs from `notion/page-registry.yaml`
-2. Use the `skills/publish-to-notion/` skill
+2. Use the `.claude/skills/publish-to-notion/` skill
 3. Update Notion display pages with current results
 4. Notion is the presentation layer — GitHub JSON is the source of truth
 

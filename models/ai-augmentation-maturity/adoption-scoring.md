@@ -1,12 +1,18 @@
 # AAMM: Adoption Scoring Methodology
 
+> Operational specification for computing Adoption scores. Defines dimensions, stages, conditions, and detection layers.
+> **Depends on:** `README.md` (model context)
+> **Read by:** agents (before scoring), CoE (when updating scoring rules)
+> **Implemented in:** `scripts/aamm/score-adoption.sh`, `scripts/aamm/collect-readiness.sh` (adoption signals)
+> **Sync rule:** Changes here MUST be reflected in the implementing scripts and vice versa.
+
 **Owner:** CoE · Dorin Solomon · **Last updated:** March 2026
 
 ---
 
 ## 1. Purpose
 
-This document defines how an AI agent scores adoption across **5 SDLC dimensions** — decision trees, stage determination, and output format. It is the operational companion to [model-spec.md](./model-spec.md).
+This document defines how an AI agent scores adoption across **5 SDLC dimensions** — decision trees, stage determination, and output format. It is the operational companion to [README.md](./README.md).
 
 **No discretionary adjustments.** Stage assignment follows the decision tree. If conditions are met, the stage is assigned.
 
@@ -96,9 +102,11 @@ An AI config file satisfies Condition B when it contains substantive content in 
 | 7 | **Build system** | How to build, which toolchain versions, package manager specifics, environment setup, CI/CD conventions |
 | 8 | **Formal specification** | Which modules implement which spec rules, verification strategy, invariants that must hold, spec-to-code mapping |
 
-Categories 7-8 are especially relevant for Haskell/blockchain repos where build complexity (Nix + Cabal) and formal spec compliance are critical for AI effectiveness.
+Categories 7-8 are especially relevant for Haskell/high-assurance repos where build complexity (Nix + Cabal) and formal spec compliance are critical for AI effectiveness.
 
-**How to check:** The agent reads the AI config file content and marks each category as present (1) or absent (0). A category is "present" if the file contains at least 2 sentences or a structured list addressing that topic. Score = count of categories present. If count ≥ 3, Condition B is satisfied. The gate remains at ≥ 3 of 8 (not 3 of 6) — the additional categories increase opportunity, not the bar.
+**How to check:** The agent reads ALL AI config file content and marks each category as present (1) or absent (0). A category is "present" if ANY AI config file contains at least 2 sentences or a structured list addressing that topic. Score = count of categories present across the **union** of all files. If count ≥ 3, Condition B is satisfied. The gate remains at ≥ 3 of 8 (not 3 of 6) — the additional categories increase opportunity, not the bar.
+
+**Union-based scoring (D1 decision, 2026-03-20):** Categories are counted across ALL AI config files, not per-file. An index-style CLAUDE.md that references `.claude/` files where content lives scores the same as a monolithic CLAUDE.md — we measure total coverage, not per-file density. This rewards DRY architecture (e.g., lace-platform's `.claude/` with 30+ organized docs).
 
 This is deterministic: presence check, not quality judgment.
 

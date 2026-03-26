@@ -35,7 +35,7 @@ Produces a scored report in [`scans/ai-augmentation/results/`](scans/ai-augmenta
 - [`config.yaml`](scans/ai-augmentation/config.yaml) — 29 tracked repos across 4 GitHub orgs
 - [`results/`](scans/ai-augmentation/results/) — monthly scan reports (Markdown + JSON)
 
-### Skills — [`skills/`](skills/)
+### Skills — [`.claude/skills/`](.claude/skills/)
 
 Claude Code skills for CoE operators:
 
