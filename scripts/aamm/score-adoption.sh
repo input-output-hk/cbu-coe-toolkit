@@ -80,7 +80,7 @@ TOTAL_AI_SIGNALS=$((L1_COUNT + L2_COUNT + L3_TOTAL + L4_COUNT + L5_COUNT))
 # ============================================================
 # CONTENT-CATEGORY ANALYSIS (for Condition B)
 # ============================================================
-# The script checks AI config file content for the 6 categories.
+# The script checks AI config file content for the 8 categories.
 # This is a heuristic — agent overrides are recommended for accuracy.
 
 check_content_categories() {
@@ -91,26 +91,33 @@ check_content_categories() {
   size=$(wc -c < "$file" | tr -d ' ')
   [[ $size -lt 50 ]] && echo "0" && return
 
-  # Architecture keywords
+  # 1. Architecture keywords
   grep -qiE '(architecture|module|package|component|boundary|dependency|monorepo|workspace|layer|domain)' "$file" 2>/dev/null && cats=$((cats+1))
-  # Conventions keywords
+  # 2. Conventions keywords
   grep -qiE '(convention|naming|style|format|pattern|prefer|avoid|anti-pattern|standard|rule)' "$file" 2>/dev/null && cats=$((cats+1))
-  # Testing keywords
+  # 3. Testing keywords
   grep -qiE '(test|coverage|jest|vitest|pytest|spec|assertion|mock|fixture|e2e|unit test)' "$file" 2>/dev/null && cats=$((cats+1))
-  # Security keywords
+  # 4. Security keywords
   grep -qiE '(security|trust|sensitive|secret|credential|auth|token|permission|vulnerability)' "$file" 2>/dev/null && cats=$((cats+1))
-  # Delivery keywords
+  # 5. Delivery keywords
   grep -qiE '(version|release|changelog|deploy|branch|merge|ci/cd|pipeline|estimation)' "$file" 2>/dev/null && cats=$((cats+1))
-  # Operations keywords
+  # 6. Operations keywords
   grep -qiE '(deploy|monitor|runbook|environment|infra|docker|kubernetes|logging|observ)' "$file" 2>/dev/null && cats=$((cats+1))
+  # 7. Build system keywords
+  grep -qiE '(build|toolchain|cabal|nix|stack|npm|yarn|pnpm|cargo|make|cmake|gradle|maven|package.manager|ghc|compiler)' "$file" 2>/dev/null && cats=$((cats+1))
+  # 8. Formal specification keywords
+  grep -qiE '(formal.spec|specification|invariant|agda|proof|verification|spec.to.code|conformance|ledger.rule|cddl)' "$file" 2>/dev/null && cats=$((cats+1))
 
   echo "$cats"
 }
 
-# Check each AI config file for content categories
+# Check content categories across ALL AI config files (union-based).
+# An index-style CLAUDE.md with @-refs to .claude/ files should score
+# the same as a monolithic CLAUDE.md — we measure total coverage, not per-file.
 BEST_CONFIG=""
 BEST_CATS=0
 CONFIG_DETAILS=""
+# Per-file scoring (for reporting)
 for f in "$ADOPTDIR"/L1-content-*; do
   [[ -f "$f" ]] || continue
   fname=$(basename "$f" | sed 's/^L1-content-//' | tr '_' '/')
@@ -123,8 +130,30 @@ for f in "$ADOPTDIR"/L1-content-*; do
 done
 CONFIG_DETAILS=$(echo "$CONFIG_DETAILS" | sed 's/,$//')
 
+# Union-based scoring: count categories present in ANY AI config file
+UNION_CATS=0
+for pattern in \
+  '(architecture|module|package|component|boundary|dependency|monorepo|workspace|layer|domain)' \
+  '(convention|naming|style|format|pattern|prefer|avoid|anti-pattern|standard|rule)' \
+  '(test|coverage|jest|vitest|pytest|spec|assertion|mock|fixture|e2e|unit test)' \
+  '(security|trust|sensitive|secret|credential|auth|token|permission|vulnerability)' \
+  '(version|release|changelog|deploy|branch|merge|ci/cd|pipeline|estimation)' \
+  '(deploy|monitor|runbook|environment|infra|docker|kubernetes|logging|observ)' \
+  '(build|toolchain|cabal|nix|stack|npm|yarn|pnpm|cargo|make|cmake|gradle|maven|package.manager|ghc|compiler)' \
+  '(formal.spec|specification|invariant|agda|proof|verification|spec.to.code|conformance|ledger.rule|cddl)'; do
+  for f in "$ADOPTDIR"/L1-content-*; do
+    [[ -f "$f" ]] || continue
+    if grep -qiE "$pattern" "$f" 2>/dev/null; then
+      UNION_CATS=$((UNION_CATS+1))
+      break  # category found, move to next category
+    fi
+  done
+done
+
+# Use union count for Condition B gate (≥3 categories across all files)
+EFFECTIVE_CATS=$UNION_CATS
 CONDITION_B_MET=false
-[[ $BEST_CATS -ge 3 ]] && CONDITION_B_MET=true
+[[ $EFFECTIVE_CATS -ge 3 ]] && CONDITION_B_MET=true
 
 # Check specific category presence for dimension-specific Condition B
 has_category() {
@@ -141,6 +170,8 @@ HAS_CONV=$(has_category '(convention|naming|style|format|pattern|prefer|avoid|st
 HAS_TEST=$(has_category '(test|coverage|jest|vitest|pytest|spec|fixture|e2e)')
 HAS_SEC=$(has_category '(security|trust|sensitive|secret|credential|auth|vulnerability)')
 HAS_DEL=$(has_category '(version|release|changelog|deploy|branch|merge|pipeline)')
+HAS_BUILD=$(has_category '(build|toolchain|cabal|nix|stack|npm|yarn|cargo|make|ghc|compiler)')
+HAS_FORMAL=$(has_category '(formal.spec|specification|invariant|agda|proof|verification|conformance|ledger.rule|cddl)')
 
 # Governance-only files (don't satisfy Condition B for dimensions)
 GOVERNANCE_ONLY_FILES=(".mcp.json" "mcp.json" ".aiignore" ".cursorignore")
@@ -244,7 +275,7 @@ CODE_B=false
 CODE_B_EVIDENCE="no AI config with Architecture + Conventions"
 if [[ "$CONDITION_B_MET" == "true" && $HAS_ARCH -eq 1 && $HAS_CONV -eq 1 ]]; then
   CODE_B=true
-  CODE_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/6 categories, includes Architecture + Conventions"
+  CODE_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/8 categories, includes Architecture + Conventions"
 fi
 
 # Testing: ≥3 categories + Testing
@@ -252,7 +283,7 @@ TESTING_B=false
 TESTING_B_EVIDENCE="no AI config with Testing category"
 if [[ "$CONDITION_B_MET" == "true" && $HAS_TEST -eq 1 ]]; then
   TESTING_B=true
-  TESTING_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/6 categories, includes Testing"
+  TESTING_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/8 categories, includes Testing"
 fi
 
 # Security: ≥3 categories + Security
@@ -260,7 +291,7 @@ SECURITY_B=false
 SECURITY_B_EVIDENCE="no AI config with Security category"
 if [[ "$CONDITION_B_MET" == "true" && $HAS_SEC -eq 1 ]]; then
   SECURITY_B=true
-  SECURITY_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/6 categories, includes Security"
+  SECURITY_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/8 categories, includes Security"
 fi
 
 # Delivery: ≥3 categories + Delivery
@@ -268,7 +299,7 @@ DELIVERY_B=false
 DELIVERY_B_EVIDENCE="no AI config with Delivery category"
 if [[ "$CONDITION_B_MET" == "true" && $HAS_DEL -eq 1 ]]; then
   DELIVERY_B=true
-  DELIVERY_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/6 categories, includes Delivery"
+  DELIVERY_B_EVIDENCE="AI config $BEST_CONFIG: $BEST_CATS/8 categories, includes Delivery"
 fi
 
 # Governance: AI usage expectations documented + .aiignore/.cursorignore
@@ -316,12 +347,26 @@ HAS_AI_ACTIVITY=false
 [[ $L2_COUNT -gt 0 || $L3_TOTAL -gt 0 || $L4_COUNT -gt 0 ]] && HAS_AI_ACTIVITY=true
 
 # AI in CI (for Integrated check)
-HAS_AI_IN_CI=false
+# Integrated requires confirmed merge-blocking AI — not just AI present in a workflow.
+# Detection: AI workflow found AND branch protection is accessible (not 404).
+# If branch protection returns 404 (org-level rulesets or absent), we cannot confirm
+# the AI workflow gates merges → cap at Active.
+HAS_AI_IN_CI_CANDIDATE=false
 if [[ $WF_COUNT -gt 0 ]]; then
   for wf in "$DATADIR"/wf_*; do
     [[ -f "$wf" ]] || continue
-    grep -qiE '(copilot|coderabbit|claude|ai-review|ai-check|ai-test|ai-security)' "$wf" 2>/dev/null && HAS_AI_IN_CI=true
+    grep -qiE '(copilot|coderabbit|claude-code-action|ai-review|ai-check|ai-test|ai-security)' "$wf" 2>/dev/null && HAS_AI_IN_CI_CANDIDATE=true
   done
+fi
+
+HAS_AI_IN_CI=false
+if [[ "$HAS_AI_IN_CI_CANDIDATE" == "true" && -f "$DATADIR/branch-protection.json" ]]; then
+  BP_MSG=$(jq -r '.message // empty' "$DATADIR/branch-protection.json" 2>/dev/null || true)
+  if [[ "$BP_MSG" != "Not Found" ]]; then
+    # Branch protection accessible — confirmed environment for merge-gating
+    HAS_AI_IN_CI=true
+  fi
+  # If BP is 404/Not Found: AI in CI candidate exists but cannot confirm it gates merges → stays false
 fi
 
 # --- Score each dimension ---
@@ -457,7 +502,9 @@ cat <<ENDJSON
   },
   "content_categories": {
     "best_config": "$BEST_CONFIG",
-    "best_score": $BEST_CATS,
+    "best_single_file": $BEST_CATS,
+    "union_across_files": $UNION_CATS,
+    "effective_score": $EFFECTIVE_CATS,
     "threshold": 3,
     "condition_b_met": $CONDITION_B_MET,
     "details": "$CONFIG_DETAILS"

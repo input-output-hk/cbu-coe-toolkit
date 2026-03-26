@@ -161,21 +161,35 @@ LINT_COUNT=$(wc -l < "$DATADIR/lint-format-configs.txt" 2>/dev/null | tr -d ' ' 
 HAS_LINTER=0
 HAS_FORMATTER=0
 if [[ -f "$DATADIR/lint-format-configs.txt" ]]; then
-  grep -qiE '(eslintrc|eslint\.config|biome\.json|\.hlint|clippy|\.pylintrc|ruff\.toml|\.stan\.toml|weeder)' "$DATADIR/lint-format-configs.txt" && HAS_LINTER=1
-  grep -qiE '(prettierrc|\.rustfmt|fourmolu|\.ormolu|stylish-haskell|biome\.json)' "$DATADIR/lint-format-configs.txt" && HAS_FORMATTER=1
+  grep -qiE '(eslintrc|eslint\.config|biome\.json|\.hlint|clippy|\.pylintrc|ruff\.toml|\.stan\.toml|weeder|flake\.nix:linter)' "$DATADIR/lint-format-configs.txt" && HAS_LINTER=1
+  grep -qiE '(prettierrc|\.rustfmt|fourmolu|\.ormolu|stylish-haskell|biome\.json|flake\.nix:formatter)' "$DATADIR/lint-format-configs.txt" && HAS_FORMATTER=1
 fi
 
-# Check CI enforcement
-CI_LINT=0
+# Check CI enforcement — per-category (linter vs formatter) for accurate scoring.
+# A repo with formatter in CI but linter only local should score 80 (both present) not 100 (both CI-enforced).
+CI_LINTER=0
+CI_FORMATTER=0
 if [[ $WF_COUNT -gt 0 ]]; then
   for wf in "$DATADIR"/wf_*; do
     [[ -f "$wf" ]] || continue
-    grep -qiE '(eslint|biome|hlint|clippy|pylint|ruff|prettier|fourmolu|rustfmt|lint|format)' "$wf" 2>/dev/null && CI_LINT=1
+    # Linter tools in CI (specific tool names + npm/nx script wrappers for TS monorepos)
+    grep -qiE '(eslint|biome check|hlint|clippy|pylint|ruff check|stan |nx.*--target=lint|npm run lint|npm run check:lint|check:lint|cargo clippy)' "$wf" 2>/dev/null && CI_LINTER=1
+    # Formatter tools in CI (see also: review-scores.sh for TS/Rust fallback)
+    grep -qiE '(prettier|fourmolu|ormolu|stylish-haskell|rustfmt|biome format|check:format|cargo fmt)' "$wf" 2>/dev/null && CI_FORMATTER=1
+  done
+  # Nix-based enforcement counts for both (nix flake check typically runs all configured checks)
+  for wf in "$DATADIR"/wf_*; do
+    [[ -f "$wf" ]] || continue
+    grep -qiE '(nix flake check)' "$wf" 2>/dev/null && { CI_LINTER=1; CI_FORMATTER=1; }
   done
 fi
+CI_LINT=$(( CI_LINTER > 0 || CI_FORMATTER > 0 ? 1 : 0 ))
 
-if [[ $HAS_LINTER -eq 1 && $HAS_FORMATTER -eq 1 && $CI_LINT -eq 1 ]]; then
+if [[ $HAS_LINTER -eq 1 && $HAS_FORMATTER -eq 1 && $CI_LINTER -eq 1 && $CI_FORMATTER -eq 1 ]]; then
   N5_SCORE=100
+elif [[ $HAS_LINTER -eq 1 && $HAS_FORMATTER -eq 1 && $CI_LINT -eq 1 ]]; then
+  # Both tools present, at least one CI-enforced — still strong but not fully enforced
+  N5_SCORE=80
 elif [[ $HAS_LINTER -eq 1 && $HAS_FORMATTER -eq 1 ]]; then
   N5_SCORE=80
 elif [[ $HAS_LINTER -eq 1 || $HAS_FORMATTER -eq 1 ]]; then
@@ -190,7 +204,7 @@ else
   N5_SCORE=0
 fi
 N5_SCORE=$(get_score "N5" "$N5_SCORE")
-N5_EVIDENCE="linter=$HAS_LINTER, formatter=$HAS_FORMATTER, ci_enforced=$CI_LINT, configs=$LINT_COUNT"
+N5_EVIDENCE="linter=$HAS_LINTER, formatter=$HAS_FORMATTER, ci_linter=$CI_LINTER, ci_formatter=$CI_FORMATTER, configs=$LINT_COUNT"
 
 # --- N6: CI/CD Pipeline ---
 # Build+deploy recently → 100, build recently → 75, minimal → 50, stale → 20, none → 0
@@ -231,10 +245,14 @@ N6_EVIDENCE="workflows=$WF_COUNT, has_build=$HAS_BUILD, has_deploy=$HAS_DEPLOY, 
 # --- N7: Reproducible Environment ---
 # Nix flake + devShell + lockfile → 100, Docker + lockfile → 80, lockfile + setup → 60,
 # lockfile only → 40, no lockfile → 10, nothing → 0
-HAS_FLAKE=$(grep -c 'flake.nix' "$DATADIR/repro-files.txt" 2>/dev/null || echo 0)
-HAS_FLAKE_LOCK=$(grep -c 'flake.lock' "$DATADIR/repro-files.txt" 2>/dev/null || echo 0)
-HAS_DOCKER=$(grep -ciE 'Dockerfile|docker-compose|devcontainer' "$DATADIR/repro-files.txt" 2>/dev/null || echo 0)
-HAS_LOCKFILE=$(grep -ciE '\.lock$|freeze$|package-lock' "$DATADIR/repro-files.txt" 2>/dev/null || echo 0)
+HAS_FLAKE=$(grep -c 'flake.nix' "$DATADIR/repro-files.txt" 2>/dev/null || true)
+[[ -z "$HAS_FLAKE" ]] && HAS_FLAKE=0
+HAS_FLAKE_LOCK=$(grep -c 'flake.lock' "$DATADIR/repro-files.txt" 2>/dev/null || true)
+[[ -z "$HAS_FLAKE_LOCK" ]] && HAS_FLAKE_LOCK=0
+HAS_DOCKER=$(grep -ciE 'Dockerfile|docker-compose|devcontainer' "$DATADIR/repro-files.txt" 2>/dev/null || true)
+[[ -z "$HAS_DOCKER" ]] && HAS_DOCKER=0
+HAS_LOCKFILE=$(grep -ciE '\.lock$|freeze$|package-lock' "$DATADIR/repro-files.txt" 2>/dev/null || true)
+[[ -z "$HAS_LOCKFILE" ]] && HAS_LOCKFILE=0
 
 if [[ $HAS_FLAKE -gt 0 && $HAS_FLAKE_LOCK -gt 0 ]]; then
   N7_SCORE=100
@@ -317,6 +335,11 @@ case "$PRIMARY_LANG" in
         U1_EVIDENCE="TypeScript, tsconfig exists but not fetched — override recommended"
       fi
     fi
+    # Detect if the tsconfig we read was actually tsconfig.base.json (NX monorepo pattern)
+    if jq -e '.tree[] | select(.path == "tsconfig.base.json")' "$DATADIR/tree.json" >/dev/null 2>&1 && \
+       ! jq -e '.tree[] | select(.path == "tsconfig.json")' "$DATADIR/tree.json" >/dev/null 2>&1; then
+      U1_EVIDENCE="$U1_EVIDENCE (via tsconfig.base.json — NX pattern)"
+    fi
     ;;
   Python)
     U1_SCORE=25
@@ -333,10 +356,89 @@ case "$PRIMARY_LANG" in
 esac
 U1_SCORE=$(get_score "U1" "$U1_SCORE")
 
-# --- U2: Documentation Coverage ---
-# Requires agent sampling. Default: 25 (conservative)
-U2_SCORE=$(get_score "U2" "25")
+# --- U2: Doc Coverage ---
+U2_SCORE=25
 U2_EVIDENCE="Not sampled — requires agent file content analysis. Override recommended."
+
+# Try to score from files sampled by collect step
+SAMPLED_COUNT=0
+PUB_ITEMS_TOTAL=0
+DOC_ITEMS_TOTAL=0
+
+for f in "$DATADIR"/sampled_u2_*; do
+  [[ -f "$f" ]] || continue
+  [[ -s "$f" ]] || continue  # skip empty files
+  # Skip files that are API error responses (429, 403, etc.) not source code
+  head -1 "$f" | grep -qE '^[0-9]{3}: ' && continue
+  SAMPLED_COUNT=$((SAMPLED_COUNT + 1))
+
+  case "$PRIMARY_LANG" in
+    Rust)
+      # Count public items: pub fn/struct/enum/trait/type/const
+      # Note: grep -c exits 1 on 0 matches but still outputs "0". Use || true to suppress exit code.
+      items=$(grep -cE '^\s*pub (fn|struct|enum|trait|type|const|impl|use)' "$f" 2>/dev/null || true)
+      items=${items:-0}
+      docs=$(grep -cE '^\s*///' "$f" 2>/dev/null || true)
+      docs=${docs:-0}
+      ;;
+    Haskell)
+      items=$(grep -cE '^[a-zA-Z][a-zA-Z0-9_'"'"']*\s*::' "$f" 2>/dev/null || true)
+      items=${items:-0}
+      docs=$(grep -cE '(^-- \||^\{- \|)' "$f" 2>/dev/null || true)
+      docs=${docs:-0}
+      ;;
+    TypeScript|JavaScript)
+      items=$(grep -cE '^export (function|class|const|interface|type|enum|abstract class|default)' "$f" 2>/dev/null || true)
+      items=${items:-0}
+      docs=$(grep -cE '^\s*/\*\*' "$f" 2>/dev/null || true)
+      docs=${docs:-0}
+      ;;
+    Python)
+      items=$(grep -cE '^(def |class )' "$f" 2>/dev/null || true)
+      items=${items:-0}
+      docs=$(grep -cE '^\s+"""' "$f" 2>/dev/null || true)
+      docs=${docs:-0}
+      ;;
+    *)
+      items=0; docs=0 ;;
+  esac
+
+  PUB_ITEMS_TOTAL=$((PUB_ITEMS_TOTAL + items))
+  DOC_ITEMS_TOTAL=$((DOC_ITEMS_TOTAL + docs))
+done
+
+if [[ $SAMPLED_COUNT -gt 0 && $PUB_ITEMS_TOTAL -gt 0 ]]; then
+  # Cap doc count at pub_items (doc lines may exceed pub items due to multi-line blocks)
+  [[ $DOC_ITEMS_TOTAL -gt $PUB_ITEMS_TOTAL ]] && DOC_ITEMS_TOTAL=$PUB_ITEMS_TOTAL
+  U2_PCT=$(( DOC_ITEMS_TOTAL * 100 / PUB_ITEMS_TOTAL ))
+  if   [[ $U2_PCT -gt 70 ]]; then U2_SCORE=100
+  elif [[ $U2_PCT -gt 50 ]]; then U2_SCORE=75
+  elif [[ $U2_PCT -gt 30 ]]; then U2_SCORE=50
+  else                              U2_SCORE=25
+  fi
+  U2_EVIDENCE="Agent sampled $SAMPLED_COUNT $(echo "$PRIMARY_LANG" | tr '[:upper:]' '[:lower:]') files: $DOC_ITEMS_TOTAL/$PUB_ITEMS_TOTAL pub items documented ($U2_PCT%) → score $U2_SCORE"
+elif [[ $SAMPLED_COUNT -gt 0 ]]; then
+  U2_EVIDENCE="Sampled $SAMPLED_COUNT files but no public items detected — default 25"
+fi
+
+# Fallback: use doc-coverage.json from collect step (richer data, 15-file sample)
+if [[ $PUB_ITEMS_TOTAL -eq 0 && -f "$DATADIR/doc-coverage.json" ]]; then
+  DC_EXPORTS=$(jq -r '.total_exports // 0' "$DATADIR/doc-coverage.json" 2>/dev/null || echo 0)
+  DC_DOCS=$(jq -r '.total_doc_comments // 0' "$DATADIR/doc-coverage.json" 2>/dev/null || echo 0)
+  DC_FILES=$(jq -r '.sampled_files // 0' "$DATADIR/doc-coverage.json" 2>/dev/null || echo 0)
+  if [[ $DC_EXPORTS -gt 0 ]]; then
+    [[ $DC_DOCS -gt $DC_EXPORTS ]] && DC_DOCS=$DC_EXPORTS
+    U2_PCT=$(( DC_DOCS * 100 / DC_EXPORTS ))
+    if   [[ $U2_PCT -gt 70 ]]; then U2_SCORE=100
+    elif [[ $U2_PCT -gt 50 ]]; then U2_SCORE=75
+    elif [[ $U2_PCT -gt 30 ]]; then U2_SCORE=50
+    else                              U2_SCORE=25
+    fi
+    U2_EVIDENCE="doc-coverage.json: $DC_FILES files sampled, $DC_DOCS/$DC_EXPORTS pub items documented ($U2_PCT%) → score $U2_SCORE"
+  fi
+fi
+
+U2_SCORE=$(get_score "U2" "$U2_SCORE")
 
 # --- U3: README Substance ---
 # Sections: Description(20), Setup(20), Usage(20), Architecture(20), Contributing(20)
@@ -345,10 +447,10 @@ if [[ -f "$DATADIR/README.md" ]]; then
   README_LINES=$(wc -l < "$DATADIR/README.md" | tr -d ' ')
   SEC_DESC=0; SEC_SETUP=0; SEC_USAGE=0; SEC_ARCH=0; SEC_CONTRIB=0
   [[ $README_LINES -gt 5 ]] && SEC_DESC=20  # assume description if README has substance
-  grep -qiE '(## *(setup|install|getting started|build|quickstart|prerequisites))' "$DATADIR/README.md" && SEC_SETUP=20
-  grep -qiE '(## *(usage|how to|examples|commands|running))' "$DATADIR/README.md" && SEC_USAGE=20
-  grep -qiE '(## *(architecture|design|system|overview|structure))' "$DATADIR/README.md" && SEC_ARCH=20
-  grep -qiE '(## *(contribut|development|develop))' "$DATADIR/README.md" && SEC_CONTRIB=20
+  grep -qiE '(#{1,6} *.{0,20}(setup|install|getting started|build|building|quickstart|prerequisites|testing))' "$DATADIR/README.md" && SEC_SETUP=20
+  grep -qiE '(#{1,6} *.{0,20}(usage|how to|examples|commands|running))' "$DATADIR/README.md" && SEC_USAGE=20
+  grep -qiE '(#{1,6} *.{0,20}(architecture|design|system|overview|structure|repository structure))' "$DATADIR/README.md" && SEC_ARCH=20
+  grep -qiE '(#{1,6} *.{0,20}(contribut|development|develop))' "$DATADIR/README.md" && SEC_CONTRIB=20
   U3_SCORE=$((SEC_DESC + SEC_SETUP + SEC_USAGE + SEC_ARCH + SEC_CONTRIB))
   U3_EVIDENCE="readme_lines=$README_LINES, desc=$((SEC_DESC/20)), setup=$((SEC_SETUP/20)), usage=$((SEC_USAGE/20)), arch=$((SEC_ARCH/20)), contrib=$((SEC_CONTRIB/20))"
 else
@@ -399,8 +501,30 @@ elif [[ $SCHEMA_COUNT -ge 1 ]]; then
 else
   U5_SCORE=0
 fi
+
+# Contract-first architecture: packages/contract/ or contracts/ with typed interfaces
+CONTRACT_PKGS=0
+if [[ -f "$DATADIR/tree.json" ]]; then
+  CONTRACT_PKGS=$(jq -r '[.tree[] | select(.type == "tree") | .path | select(test("^packages/contract/[^/]+$|^contracts/[^/]+$"; "i"))] | length' "$DATADIR/tree.json" 2>/dev/null || echo 0)
+fi
+
+# Schema validation libraries in package manifests (zod, io-ts, valibot, yup, joi)
+SCHEMA_DEPS=0
+if [[ -f "$DATADIR/package-manifests.txt" ]]; then
+  grep -qiE '"(zod|io-ts|valibot|yup|joi)"' "$DATADIR/package-manifests.txt" 2>/dev/null && SCHEMA_DEPS=1
+fi
+
+# Adjust U5 when no literal schema files found but contract/dep patterns exist
+if [[ $SCHEMA_COUNT -eq 0 ]]; then
+  if [[ $CONTRACT_PKGS -ge 5 ]]; then
+    U5_SCORE=50  # conservative: contract dirs suggest boundary definitions
+  elif [[ $CONTRACT_PKGS -ge 1 || $SCHEMA_DEPS -ge 1 ]]; then
+    U5_SCORE=50
+  fi
+fi
+
 U5_SCORE=$(get_score "U5" "$U5_SCORE")
-U5_EVIDENCE="schema_files=$SCHEMA_COUNT (heuristic — override recommended for dep-based schemas like zod/io-ts)"
+U5_EVIDENCE="schema_files=$SCHEMA_COUNT, contract_pkgs=$CONTRACT_PKGS, schema_deps=$SCHEMA_DEPS (heuristic — override recommended)"
 
 # --- V1: Test/Source Ratio ---
 if (( $(echo "$TEST_RATIO > 0.7" | bc -l) )); then
@@ -414,8 +538,40 @@ elif (( $(echo "$TEST_RATIO >= 0.1" | bc -l) )); then
 else
   V1_SCORE=0
 fi
-V1_SCORE=$(get_score "V1" "$V1_SCORE")
 V1_EVIDENCE="ratio=$TEST_RATIO ($TEST_COUNT test / $SRC_COUNT source)"
+
+# Rust inline test override: #[cfg(test)] modules in source files are invisible to file count
+# Spec: "A Rust repo with ratio 0.1-0.2 may have substantial inline test coverage. Manual override is recommended."
+if [[ "$PRIMARY_LANG" == "Rust" && $V1_SCORE -le 25 ]]; then
+  INLINE_TEST_FILES=0
+  INLINE_TEST_TOTAL=0
+  for f in "$DATADIR"/sampled_u2_* "$DATADIR"/sampled_doc_*; do
+    [[ -f "$f" ]] || continue
+    CFG_TEST=$(grep -c '#\[cfg(test)\]' "$f" 2>/dev/null || true)
+    CFG_TEST=${CFG_TEST:-0}
+    if [[ $CFG_TEST -gt 0 ]]; then
+      INLINE_TEST_FILES=$((INLINE_TEST_FILES + 1))
+      INLINE_TEST_TOTAL=$((INLINE_TEST_TOTAL + CFG_TEST))
+    fi
+  done
+  TOTAL_SAMPLED=0
+  for f in "$DATADIR"/sampled_u2_* "$DATADIR"/sampled_doc_*; do
+    [[ -f "$f" ]] && TOTAL_SAMPLED=$((TOTAL_SAMPLED + 1))
+  done
+  if [[ $TOTAL_SAMPLED -gt 0 && $INLINE_TEST_FILES -gt 0 ]]; then
+    INLINE_PCT=$(( INLINE_TEST_FILES * 100 / TOTAL_SAMPLED ))
+    if [[ $INLINE_PCT -ge 50 ]]; then
+      # >50% of sampled source files have inline tests → bump to at least 50
+      V1_SCORE=50
+      V1_EVIDENCE="$V1_EVIDENCE (Rust inline test override: $INLINE_TEST_FILES/$TOTAL_SAMPLED sampled files have #[cfg(test)])"
+    elif [[ $INLINE_PCT -ge 25 ]]; then
+      V1_SCORE=$(( V1_SCORE > 25 ? V1_SCORE : 25 ))
+      V1_EVIDENCE="$V1_EVIDENCE (Rust: $INLINE_TEST_FILES/$TOTAL_SAMPLED sampled files have #[cfg(test)])"
+    fi
+  fi
+fi
+
+V1_SCORE=$(get_score "V1" "$V1_SCORE")
 
 # --- V2: Test Categorization ---
 # Heuristic: check test directory structure + file names + package dependencies
@@ -427,25 +583,50 @@ if [[ -f "$DATADIR/test-files.tsv" ]]; then
   grep -qiE '(property|quickcheck|hedgehog|fast-check|proptest|Arbitrary|Gen\.)' "$DATADIR/test-files.tsv" && TEST_CATS=$((TEST_CATS+1)) && V2_CATS_FOUND="${V2_CATS_FOUND}property,"
   grep -qiE '(golden|snapshot|Golden)' "$DATADIR/test-files.tsv" && TEST_CATS=$((TEST_CATS+1)) && V2_CATS_FOUND="${V2_CATS_FOUND}golden,"
   grep -qiE '(conformance|compliance|Conformance)' "$DATADIR/test-files.tsv" && TEST_CATS=$((TEST_CATS+1)) && V2_CATS_FOUND="${V2_CATS_FOUND}conformance,"
-  grep -qiE '(Spec\.(hs|ts|tsx|js)$|\.spec\.)' "$DATADIR/test-files.tsv" && { echo "$V2_CATS_FOUND" | grep -q 'unit' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}spec,"; }; }
 fi
 
-# For Haskell: also check .cabal file dependencies for test frameworks
-if [[ "$PRIMARY_LANG" == "Haskell" && -f "$DATADIR/tree.json" ]]; then
-  # Scan for .cabal files that mention test framework dependencies
-  CABAL_DEPS=""
-  for cabal_file in "$DATADIR"/package-manifests.txt; do
-    [[ -f "$cabal_file" ]] || continue
-    # We don't fetch .cabal contents, but we can check tree for test framework indicators
-  done
-  # Check fetched workflow files and any available .cabal content for framework names
-  for f in "$DATADIR"/wf_* "$DATADIR"/*.cabal 2>/dev/null; do
+# TypeScript/JS: .test.ts/.spec.ts files NOT in e2e/integration dirs → unit tests
+# B1 fix: exclude files already matched by integration/e2e pattern to avoid false positives
+if [[ -f "$DATADIR/test-files.tsv" ]] && ! echo "$V2_CATS_FOUND" | grep -q 'unit'; then
+  UNIT_CANDIDATES=$(grep -iE '\.(test|spec)\.(ts|tsx|js|jsx)' "$DATADIR/test-files.tsv" 2>/dev/null | grep -viE '(e2e|end.to.end|integration|playwright|cypress|webdriver|selenium|storybook)' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+  if [[ ${UNIT_CANDIDATES:-0} -gt 0 ]]; then
+    TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}unit,"
+  fi
+fi
+
+# Rust: #[cfg(test)] inline modules → unit tests
+if [[ "$PRIMARY_LANG" == "Rust" ]] && ! echo "$V2_CATS_FOUND" | grep -q 'unit'; then
+  for f in "$DATADIR"/sampled_u2_* "$DATADIR"/sampled_doc_*; do
     [[ -f "$f" ]] || continue
-    grep -qiE '(QuickCheck|hedgehog)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'property' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}property,"; }; }
-    grep -qiE '(hspec|HSpec)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'spec' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}spec/bdd,"; }; }
-    grep -qiE '(tasty|HUnit)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'unit' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}unit,"; }; }
+    if grep -q '#\[cfg(test)\]' "$f" 2>/dev/null; then
+      TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}unit,"
+      break
+    fi
   done
 fi
+
+# ALL languages: check CI workflow files for E2E/visual-regression frameworks
+for wf in "$DATADIR"/wf_*; do
+  [[ -f "$wf" ]] || continue
+  if ! echo "$V2_CATS_FOUND" | grep -q 'e2e'; then
+    grep -qiE '(playwright|cypress|webdriverio|wdio|selenium|browserstack)' "$wf" 2>/dev/null && {
+      TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}integration/e2e,"
+    }
+  fi
+  if ! echo "$V2_CATS_FOUND" | grep -q 'visual'; then
+    grep -qiE '(chromatic|percy|backstopjs)' "$wf" 2>/dev/null && {
+      TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}visual-regression,"
+    }
+  fi
+done
+
+# For Haskell: also check .cabal file dependencies for test frameworks
+for f in "$DATADIR"/wf_* "$DATADIR"/*.cabal; do
+  [[ -f "$f" ]] || continue
+  grep -qiE '(QuickCheck|hedgehog)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'property' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}property,"; }; }
+  grep -qiE '(hspec|HSpec)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'unit' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}unit,"; }; }
+  grep -qiE '(tasty|HUnit)' "$f" 2>/dev/null && { echo "$V2_CATS_FOUND" | grep -q 'unit' || { TEST_CATS=$((TEST_CATS+1)); V2_CATS_FOUND="${V2_CATS_FOUND}unit,"; }; }
+done
 V2_CATS_FOUND=$(echo "$V2_CATS_FOUND" | sed 's/,$//')
 
 if [[ $TEST_CATS -ge 3 ]]; then
@@ -463,20 +644,31 @@ V2_SCORE=$(get_score "V2" "$V2_SCORE")
 V2_EVIDENCE="detected_categories=$TEST_CATS [$V2_CATS_FOUND] (heuristic — override recommended)"
 
 # --- V3: CI Test Execution ---
-# Check for test steps in CI
 CI_TEST=0
 CI_TEST_BLOCKING=0
+CI_TEST_ON_MAIN=0
 if [[ $WF_COUNT -gt 0 ]]; then
   for wf in "$DATADIR"/wf_*; do
     [[ -f "$wf" ]] || continue
-    grep -qiE '(test|jest|vitest|pytest|cabal test|cargo test|npm test|yarn test|mocha|rspec)' "$wf" 2>/dev/null && CI_TEST=1
-    # Check for required status checks (heuristic: test on pull_request)
-    grep -qiE 'pull_request' "$wf" 2>/dev/null && CI_TEST_BLOCKING=1
+    # Check if this workflow runs tests
+    grep -qiE '(test|spec|check|vitest|jest|pytest|cabal test|cargo test|hspec|nx.*test|run-many.*test)' "$wf" 2>/dev/null || continue
+    CI_TEST=1
+    # Blocking: runs on pull_request
+    if grep -qiE 'pull_request' "$wf" 2>/dev/null; then
+      CI_TEST_BLOCKING=1
+      # Also runs on push to main/master?
+      if grep -qiE '(push:|branches:)' "$wf" 2>/dev/null && \
+         grep -qiE '(main|master)' "$wf" 2>/dev/null; then
+        CI_TEST_ON_MAIN=1
+      fi
+    fi
   done
 fi
 
-if [[ $CI_TEST -eq 1 && $CI_TEST_BLOCKING -eq 1 ]]; then
-  V3_SCORE=80  # Conservative: "Tests on PR, blocking merge"
+if [[ $CI_TEST -eq 1 && $CI_TEST_BLOCKING -eq 1 && $CI_TEST_ON_MAIN -eq 1 ]]; then
+  V3_SCORE=100
+elif [[ $CI_TEST -eq 1 && $CI_TEST_BLOCKING -eq 1 ]]; then
+  V3_SCORE=80
 elif [[ $CI_TEST -eq 1 ]]; then
   V3_SCORE=50
 elif [[ $WF_COUNT -gt 0 ]]; then
@@ -485,7 +677,7 @@ else
   V3_SCORE=0
 fi
 V3_SCORE=$(get_score "V3" "$V3_SCORE")
-V3_EVIDENCE="ci_test=$CI_TEST, ci_blocking=$CI_TEST_BLOCKING"
+V3_EVIDENCE="ci_test=$CI_TEST, ci_blocking=$CI_TEST_BLOCKING, ci_on_main=$CI_TEST_ON_MAIN"
 
 # --- V4: Coverage Configuration ---
 HAS_COVERAGE=0
@@ -493,14 +685,16 @@ HAS_COVERAGE_THRESHOLD=0
 if [[ $WF_COUNT -gt 0 ]]; then
   for wf in "$DATADIR"/wf_*; do
     [[ -f "$wf" ]] || continue
-    grep -qiE '(coverage|codecov|coveralls|hpc|tarpaulin|c8|istanbul|nyc|--coverage)' "$wf" 2>/dev/null && HAS_COVERAGE=1
-    grep -qiE '(threshold|minimum|--min|--check-coverage|coverage-minimum)' "$wf" 2>/dev/null && HAS_COVERAGE_THRESHOLD=1
+    # Match specific coverage tools, not generic words. "coverage" alone is too broad.
+    grep -qiE '(codecov|coveralls|\bhpc\b|tarpaulin|\bc8\b|istanbul|nyc|--coverage|enable-coverage|coverage-report|jest.*coverage|vitest.*coverage|pytest.*cov)' "$wf" 2>/dev/null && HAS_COVERAGE=1
+    # Threshold patterns must be coverage-specific, not generic ("--min" matches --minimize-conflict-set)
+    grep -qiE '(coverage.*threshold|coverage.*minimum|--check-coverage|coverage-minimum|--min-coverage|fail-under|--cov-fail-under)' "$wf" 2>/dev/null && HAS_COVERAGE_THRESHOLD=1
   done
 fi
 
 # Also check tree for coverage config
 if [[ -f "$DATADIR/tree.json" ]]; then
-  COVERAGE_CONFIG=$(jq -r '[.tree[] | select(.type == "blob") | .path | select(test("(codecov|\.nycrc|coverage|\.c8rc)"; "i"))] | length' "$DATADIR/tree.json")
+  COVERAGE_CONFIG=$(jq -r '[.tree[] | select(.type == "blob") | .path | select(test("(codecov|[.]nycrc|coverage|[.]c8rc)"; "i"))] | length' "$DATADIR/tree.json")
   [[ $COVERAGE_CONFIG -gt 0 ]] && HAS_COVERAGE=1
 fi
 
@@ -618,11 +812,14 @@ elif [[ $HAS_RENOVATE -eq 1 ]]; then
 fi
 
 # Also check for security scanning in CI
+# cargo-deny: only counts as CVE scanning when checking advisories (not licenses-only)
 HAS_CI_SECURITY=0
 if [[ $WF_COUNT -gt 0 ]]; then
   for wf in "$DATADIR"/wf_*; do
     [[ -f "$wf" ]] || continue
-    grep -qiE '(codeql|trivy|snyk|semgrep|cargo-deny|npm audit|safety check|bandit|cabal-audit)' "$wf" 2>/dev/null && HAS_CI_SECURITY=1
+    grep -qiE '(codeql|trivy|snyk|semgrep|npm audit|safety check|bandit|cabal-audit)' "$wf" 2>/dev/null && HAS_CI_SECURITY=1
+    # cargo-deny counts only when running advisories check (not licenses-only)
+    grep -qiE '(cargo.deny check advisories|cargo deny check advisories|cargo.deny check$|cargo deny check$|cargo.deny check [^l])' "$wf" 2>/dev/null && HAS_CI_SECURITY=1
   done
 fi
 
@@ -645,12 +842,26 @@ esac
 if [[ $DEPS_COVER_PRIMARY -eq 1 || $HAS_CI_SECURITY -eq 1 ]]; then
   PENALTY_DEPS=0
   DEPS_STATUS="covered"
+elif [[ $HAS_DEP_STRATEGY -eq 1 ]]; then
+  # Language-specific: Haskell lacks mature CVE tooling (cabal-audit is early stage) → risk flag only.
+  # Rust has cargo-deny (mature); TypeScript/JS/Python/Go have dependabot/renovate → -5 if not configured.
+  case "$PRIMARY_LANG" in
+    Haskell)
+      PENALTY_DEPS=0
+      DEPS_STATUS="ecosystem lacks CVE tooling; team manages deps via cabal.project/flake.lock (risk flag only)"
+      ;;
+    Rust)
+      PENALTY_DEPS=5
+      DEPS_STATUS="lockfile present but no cargo-deny check advisories detected; CVE scanning recommended (-5)"
+      ;;
+    *)
+      PENALTY_DEPS=5
+      DEPS_STATUS="lockfile present but no vulnerability scanning configured for $PRIMARY_LANG (-5)"
+      ;;
+  esac
 elif [[ $HAS_DEPENDABOT -eq 1 && $DEPS_COVER_PRIMARY -eq 0 ]]; then
   PENALTY_DEPS=5
-  DEPS_STATUS="partial (wrong ecosystem)"
-elif [[ $HAS_DEPENDABOT -eq 0 && $HAS_RENOVATE -eq 0 && $HAS_DEP_STRATEGY -eq 1 ]]; then
-  PENALTY_DEPS=5
-  DEPS_STATUS="no scanning but active dep management"
+  DEPS_STATUS="partial (dependabot configured but does not cover primary language)"
 elif [[ $HAS_DEPENDABOT -eq 0 && $HAS_RENOVATE -eq 0 ]]; then
   PENALTY_DEPS=10
   DEPS_STATUS="no scanning, no strategy"
@@ -663,8 +874,14 @@ if [[ -f "$DATADIR/branch-protection.json" ]]; then
   if jq -e '.required_pull_request_reviews' "$DATADIR/branch-protection.json" >/dev/null 2>&1; then
     BP_STATUS="protected"
   elif jq -e '.message' "$DATADIR/branch-protection.json" 2>/dev/null | grep -q "Not Found" 2>/dev/null; then
-    BP_STATUS="not_found"
-    PENALTY_BP=5
+    # 404 can mean no protection OR insufficient API scope — check PR review counter-evidence
+    if [[ $TOTAL_REVIEWED -gt 0 && $UNREVIEW_PCT -le 10 ]]; then
+      BP_STATUS="not_found_but_reviews_found"
+      PENALTY_BP=0
+    else
+      BP_STATUS="not_found"
+      PENALTY_BP=5
+    fi
   elif jq -e '.message' "$DATADIR/branch-protection.json" 2>/dev/null | grep -q "403\|Forbidden" 2>/dev/null; then
     BP_STATUS="forbidden_403"
     # Inconclusive — check if PRs have reviews as counter-evidence
@@ -685,6 +902,72 @@ TOTAL_PENALTY=$((PENALTY_REVIEW + PENALTY_DEPS + PENALTY_BP))
 READINESS=$(echo "scale=2; r = $READINESS_RAW - $TOTAL_PENALTY; if (r < 0) 0 else r" | bc)
 # Simpler version:
 READINESS=$(echo "scale=1; r = $READINESS_RAW - $TOTAL_PENALTY; if (r < 0) 0 else r" | bc)
+
+# ============================================================
+# HIGH-ASSURANCE DOMAIN PROFILE
+# ============================================================
+
+DOMAIN_PROFILE="null"
+DOMAIN_RISK_FLAGS="[]"
+if [[ -f "$DATADIR/high-assurance-domain.json" ]]; then
+  IS_HIGH_ASSURANCE=$(jq -r '.is_high_assurance' "$DATADIR/high-assurance-domain.json")
+  if [[ "$IS_HIGH_ASSURANCE" == "1" ]]; then
+    BD_EVIDENCE=$(jq -r '.detection_evidence' "$DATADIR/high-assurance-domain.json")
+    BD_AGDA=$(jq -r '.supplementary_signals.formal_spec.agda_files' "$DATADIR/high-assurance-domain.json")
+    BD_FORMAL_DIRS=$(jq -r '.supplementary_signals.formal_spec.formal_spec_dirs' "$DATADIR/high-assurance-domain.json")
+    BD_CDDL=$(jq -r '.supplementary_signals.formal_spec.cddl_files' "$DATADIR/high-assurance-domain.json")
+    BD_CONFORMANCE_DIRS=$(jq -r '.supplementary_signals.conformance_testing.conformance_dirs' "$DATADIR/high-assurance-domain.json")
+    BD_CONFORMANCE_ORACLE=$(jq -r '.supplementary_signals.conformance_testing.conformance_oracle' "$DATADIR/high-assurance-domain.json")
+    BD_COVER=$(jq -r '.supplementary_signals.generator_discipline.cover_classify' "$DATADIR/high-assurance-domain.json")
+    BD_ARBITRARY=$(jq -r '.supplementary_signals.generator_discipline.custom_arbitrary' "$DATADIR/high-assurance-domain.json")
+    BD_ADVERSARIAL=$(jq -r '.supplementary_signals.generator_discipline.adversarial_generators' "$DATADIR/high-assurance-domain.json")
+    BD_IO_SIM=$(jq -r '.supplementary_signals.concurrency_testing.io_sim' "$DATADIR/high-assurance-domain.json")
+    BD_BENCH_FILES=$(jq -r '.supplementary_signals.benchmarks.bench_files' "$DATADIR/high-assurance-domain.json")
+    BD_BENCH_DIRS=$(jq -r '.supplementary_signals.benchmarks.bench_dirs' "$DATADIR/high-assurance-domain.json")
+    BD_BENCH_CI=$(jq -r '.supplementary_signals.benchmarks.ci_regression' "$DATADIR/high-assurance-domain.json")
+    BD_STRICT=$(jq -r '.supplementary_signals.strict_discipline' "$DATADIR/high-assurance-domain.json")
+    BD_AIIGNORE=$(jq -r '.supplementary_signals.aiignore' "$DATADIR/high-assurance-domain.json")
+
+    # Domain risk flags
+    DOMAIN_RISK_FLAGS="[]"
+    # Risk: formal spec but no conformance
+    if [[ $BD_AGDA -gt 0 || $BD_FORMAL_DIRS -gt 0 ]] && [[ $BD_CONFORMANCE_DIRS -eq 0 && $BD_CONFORMANCE_ORACLE -eq 0 ]]; then
+      DOMAIN_RISK_FLAGS=$(echo "$DOMAIN_RISK_FLAGS" | jq '. + [{"risk": "No conformance testing", "severity": "high", "detail": "Formal spec detected but no conformance tests found"}]')
+    fi
+    # Risk: no io-sim for distributed code
+    if [[ $BD_IO_SIM -eq 0 ]]; then
+      DESC_LOWER=$(jq -r '.description // "" | ascii_downcase' "$DATADIR/metadata.json")
+      if echo "$DESC_LOWER" | grep -qiE '(network|distributed|consensus|protocol)'; then
+        DOMAIN_RISK_FLAGS=$(echo "$DOMAIN_RISK_FLAGS" | jq '. + [{"risk": "No concurrency testing framework", "severity": "medium", "detail": "Network/distributed code but no io-sim/dejafu detected"}]')
+      fi
+    fi
+    # Risk: no benchmark regression
+    if [[ $BD_BENCH_FILES -eq 0 && $BD_BENCH_DIRS -eq 0 ]]; then
+      DOMAIN_RISK_FLAGS=$(echo "$DOMAIN_RISK_FLAGS" | jq '. + [{"risk": "No benchmark regression detection", "severity": "medium", "detail": "Performance-sensitive high-assurance code without benchmarks"}]')
+    elif [[ $BD_BENCH_CI -eq 0 ]]; then
+      DOMAIN_RISK_FLAGS=$(echo "$DOMAIN_RISK_FLAGS" | jq '. + [{"risk": "Benchmarks without CI regression detection", "severity": "medium", "detail": "Benchmarks exist but no CI-based regression alerting detected"}]')
+    fi
+
+    DOMAIN_PROFILE=$(cat <<DPJSON
+{
+      "domain": "high-assurance",
+      "detection_evidence": "$BD_EVIDENCE",
+      "supplementary_signals": {
+        "formal_spec_presence": { "agda_files": $BD_AGDA, "formal_spec_dirs": $BD_FORMAL_DIRS, "cddl_files": $BD_CDDL },
+        "conformance_testing": { "conformance_dirs": $BD_CONFORMANCE_DIRS, "conformance_oracle": $BD_CONFORMANCE_ORACLE },
+        "generator_discipline": { "cover_classify": $BD_COVER, "custom_arbitrary": $BD_ARBITRARY, "adversarial_generators": $BD_ADVERSARIAL },
+        "concurrency_testing": { "io_sim": $BD_IO_SIM },
+        "benchmark_regression": { "bench_files": $BD_BENCH_FILES, "bench_dirs": $BD_BENCH_DIRS, "ci_regression": $BD_BENCH_CI },
+        "strict_discipline": $BD_STRICT,
+        "aiignore_on_critical": $BD_AIIGNORE
+      },
+      "risk_flags": $DOMAIN_RISK_FLAGS,
+      "recommendation_framing": "AI as adversarial reviewer/challenger/auditor on critical code; quality driver on docs/tests/PRs; code generator only on boilerplate/serialization"
+    }
+DPJSON
+)
+  fi
+fi
 
 # ============================================================
 # OUTPUT JSON
@@ -752,10 +1035,11 @@ cat <<ENDJSON
     "max_depth": $MAX_DEPTH,
     "source_files": $SRC_COUNT,
     "test_files": $TEST_COUNT,
-    "test_source_ratio": $TEST_RATIO,
+    "test_source_ratio": $(echo "$TEST_RATIO" | sed 's/^\./0./'),
     "median_file_bytes": $MEDIAN_BYTES,
     "median_file_lines": $MEDIAN_LINES,
     "large_files_count": $LARGE_COUNT
-  }
+  },
+  "domain_profile": $DOMAIN_PROFILE
 }
 ENDJSON

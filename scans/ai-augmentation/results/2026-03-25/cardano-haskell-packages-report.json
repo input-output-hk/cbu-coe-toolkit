@@ -1,0 +1,260 @@
+{
+  "metadata": {
+    "model_version": "1.0",
+    "scan_date": "2026-03-25",
+    "scanned_by": "CoE (Dorin Solomon)"
+  },
+  "repository": {
+    "full_name": "IntersectMBO/cardano-haskell-packages",
+    "description": "Metadata for Cardano's Haskell package repository",
+    "default_branch": "main",
+    "primary_language": "Shell",
+    "size_kb": 545308,
+    "license": "Apache-2.0",
+    "stars": 36,
+    "open_issues": 36,
+    "private": false
+  },
+  "readiness": {
+    "composite": 37.46,
+    "raw": 42.46,
+    "penalties_total": -5,
+    "constraints_applied": [],
+    "pillars": {
+      "navigate": {
+        "score": 78.25,
+        "weight": 0.35,
+        "signals": {
+          "N1_file_organization": {
+            "score": 75,
+            "weight": 0.12,
+            "evidence": "max_depth=4, directories=2824"
+          },
+          "N2_file_granularity": {
+            "score": 100,
+            "weight": 0.13,
+            "evidence": "median_lines=0, large_files=0, per_file_penalty=-0"
+          },
+          "N3_module_boundaries": {
+            "score": 75,
+            "weight": 0.15,
+            "evidence": "workspace_files=0, package_manifests=642"
+          },
+          "N4_separation_of_concerns": {
+            "score": 100,
+            "weight": 0.12,
+            "evidence": "top_level_dirs=5 (heuristic — override recommended)"
+          },
+          "N5_code_consistency": {
+            "score": 0,
+            "weight": 0.13,
+            "evidence": "linter=0, formatter=0, ci_enforced=1, configs=0"
+          },
+          "N6_cicd_pipeline": {
+            "score": 100,
+            "weight": 0.15,
+            "evidence": "workflows=2, has_build=1, has_deploy=1, days_since_push=0"
+          },
+          "N7_reproducible_env": {
+            "score": 100,
+            "weight": 0.12,
+            "evidence": "flake=1, flake_lock=1, docker=0, lockfile=1"
+          },
+          "N8_repo_foundations": {
+            "score": 75,
+            "weight": 0.08,
+            "evidence": "codeowners=1, gitignore_cats=1(10), security_md=1"
+          }
+        }
+      },
+      "understand": {
+        "score": 30.25,
+        "weight": 0.35,
+        "signals": {
+          "U1_type_safety": {
+            "score": 40,
+            "weight": 0.30,
+            "evidence": "Shell — requires manual type safety assessment"
+          },
+          "U2_doc_coverage": {
+            "score": 25,
+            "weight": 0.25,
+            "evidence": "Not sampled — requires agent file content analysis. Override recommended."
+          },
+          "U3_readme_substance": {
+            "score": 80,
+            "weight": 0.15,
+            "evidence": "readme_lines=493, desc=1, setup=1, usage=1, arch=0, contrib=1"
+          },
+          "U4_architecture_docs": {
+            "score": 0,
+            "weight": 0.15,
+            "evidence": "adrs=0, architecture_md=0"
+          },
+          "U5_schema_definitions": {
+            "score": 0,
+            "weight": 0.15,
+            "evidence": "schema_files=0 (heuristic — override recommended for dep-based schemas like zod/io-ts)"
+          }
+        }
+      },
+      "verify": {
+        "score": 15.00,
+        "weight": 0.30,
+        "hard_gate": "FAIL (zero tests — capped at 15)",
+        "signals": {
+          "V1_test_source_ratio": {
+            "score": 0,
+            "weight": 0.30,
+            "evidence": "ratio=0 (0 test / 0 source)"
+          },
+          "V2_test_categorization": {
+            "score": 0,
+            "weight": 0.20,
+            "evidence": "detected_categories=0 [] (heuristic — override recommended)"
+          },
+          "V3_ci_test_execution": {
+            "score": 80,
+            "weight": 0.30,
+            "evidence": "ci_test=1, ci_blocking=1"
+          },
+          "V4_coverage_config": {
+            "score": 0,
+            "weight": 0.20,
+            "evidence": "coverage_tool=0, threshold=0"
+          }
+        }
+      }
+    },
+    "penalties": {
+      "prs_without_review": {
+        "unreviewed": 8,
+        "total_checked": 40,
+        "applied": false,
+        "impact": -0
+      },
+      "no_vulnerability_monitoring": {
+        "dependabot": 1,
+        "renovate": 0,
+        "covers_primary": 0,
+        "ci_security": 0,
+        "dep_strategy": 1,
+        "status": "ecosystem lacks tooling, team manages deps (risk flag only)",
+        "applied": false,
+        "impact": -0
+      },
+      "no_branch_protection": {
+        "status": "not_found",
+        "applied": true,
+        "impact": -5
+      }
+    }
+  },
+  "adoption": {
+    "composite": 0,
+    "total_ai_signals": 0,
+    "detection_layers": {
+      "L1_tree": {
+        "count": 0,
+        "files": ""
+      },
+      "L2_commits": {
+        "count": 0
+      },
+      "L3_pr_author": {
+        "copilot_swe": 0,
+        "coderabbit": 0,
+        "copilot": 0,
+        "total": 0
+      },
+      "L4_pr_body": {
+        "count": 0
+      },
+      "L5_submodules": {
+        "count": 0,
+        "inaccessible": ""
+      }
+    },
+    "dimensions": {
+      "code": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.25,
+        "condition_a": {
+          "met": true,
+          "evidence": "linter=0, codeowners=1"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Architecture + Conventions"
+        },
+        "annotation": "Practice active, no AI config"
+      },
+      "testing": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.25,
+        "condition_a": {
+          "met": true,
+          "evidence": "test execution found in CI workflows"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Testing category"
+        },
+        "annotation": "Practice active, no AI config"
+      },
+      "security": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.20,
+        "condition_a": {
+          "met": false,
+          "evidence": "dependabot exists but doesn't cover Shell"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Security category"
+        },
+        "annotation": "No AI presence"
+      },
+      "delivery": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.15,
+        "condition_a": {
+          "met": true,
+          "evidence": "build_workflow=true, issues=true (open=36)"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no AI config with Delivery category"
+        },
+        "annotation": "Practice active, no AI config"
+      },
+      "governance": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.15,
+        "condition_a": {
+          "met": false,
+          "evidence": "no AI config files"
+        },
+        "condition_b": {
+          "met": false,
+          "evidence": "no usage expectations or .aiignore"
+        },
+        "annotation": "No AI presence"
+      }
+    },
+    "annotations": [
+      "Code: Practice active, no AI config",
+      "Testing: Practice active, no AI config",
+      "Security: No AI presence",
+      "Delivery: Practice active, no AI config",
+      "Governance: No AI presence"
+    ],
+    "risk_flags": []
+  },
+  "quadrant": "Traditional"
+}

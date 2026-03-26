@@ -1,34 +1,21 @@
 # ADR-XXXX: [Title]
 
-**Date:** YYYY-MM-DD
-**Status:** Proposed | Accepted | Superseded by ADR-XXXX | Deprecated
-**Confidence:** High | Medium | Low
+**Date:** YYYY-MM-DD · **Status:** Proposed | Accepted | Superseded by ADR-XXXX
+**Applies to:** [files and scripts affected by this decision]
+
+## Rule
+
+[1-2 sentences: what was decided. An agent reading only this section should know the rule.]
+
+## Anti-patterns
+
+- [What NOT to do — the mistake this decision prevents]
 
 ## Context
 
-What situation requires a decision? What constraints or pressures are we responding to?
-
-## Decision drivers
-
-- [Driver 1 — e.g., compliance requirement, performance constraint]
-- [Driver 2]
-
-## Considered alternatives
-
-| Option | Pros | Cons |
-|---|---|---|
-| **Chosen option** | ... | ... |
-| Alternative A | ... | ... |
-| Alternative B | ... | ... |
-
-## Decision
-
-What did we decide and why? Reference the drivers above.
+[Why this decision was needed — only enough to understand the rule]
 
 ## Consequences
 
-What follows from this decision? What trade-offs are we accepting?
-
-- **Positive:** ...
-- **Negative:** ...
-- **Risks:** ...
+- **Changed:** [files modified]
+- **Must maintain:** [sync requirements]

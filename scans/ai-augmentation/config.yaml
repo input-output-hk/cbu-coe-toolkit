@@ -25,8 +25,8 @@ model_documents:
 # --------------------------------------------------------------------------
 results:
   directory: scans/ai-augmentation/results
-  filename_pattern: "YYYY-MM.json"
-  # Pilot results use: 2026-03-pilot.json
+  folder_pattern: "YYYY-MM-DD"   # one folder per scan run
+  # Each run creates: results/YYYY-MM-DD/{repo}-report.{md,json} + batch-scan.md
   # Never overwrite previous snapshots
 
 # --------------------------------------------------------------------------
@@ -34,7 +34,7 @@ results:
 # --------------------------------------------------------------------------
 notion:
   page_registry: notion/page-registry.yaml
-  publish_skill: skills/publish-to-notion/
+  publish_skill: .claude/skills/publish-to-notion/
 
 # --------------------------------------------------------------------------
 # AI Config File Patterns

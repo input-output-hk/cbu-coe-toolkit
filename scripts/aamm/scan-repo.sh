@@ -17,7 +17,9 @@ REPONAME="${REPO##*/}"
 DATADIR="/tmp/aamm-$(echo "$REPO" | tr '/' '-')"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOLKIT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-OUTPUT_DIR="$TOOLKIT_ROOT/scans/ai-augmentation/results"
+SCAN_DATE="$(date +%Y-%m-%d)"
+OUTPUT_DIR="$TOOLKIT_ROOT/scans/ai-augmentation/results/$SCAN_DATE"
+mkdir -p "$OUTPUT_DIR"
 
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║  AAMM Full Scan: $REPO"
@@ -44,8 +46,13 @@ A_SCORE=$(jq -r '.adoption.composite' "$DATADIR/adoption-scores.json")
 echo "  Adoption composite: $A_SCORE"
 echo ""
 
-# --- Step 4: Generate Report ---
-echo "━━━ Step 4/4: Report Generation ━━━"
+# --- Step 4: Principal Engineer Review ---
+echo "━━━ Step 4/5: Score Review (Principal Engineer Lens) ━━━"
+"$SCRIPT_DIR/review-scores.sh" "$REPO" "$DATADIR"
+echo ""
+
+# --- Step 5: Generate Report ---
+echo "━━━ Step 5/5: Report Generation ━━━"
 "$SCRIPT_DIR/generate-report.sh" "$REPO" "$DATADIR" "$OUTPUT_DIR"
 echo ""
 

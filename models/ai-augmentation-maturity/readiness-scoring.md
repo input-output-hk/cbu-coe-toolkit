@@ -1,14 +1,20 @@
 # AAMM: Readiness Scoring Methodology
 
+> Operational specification for computing Readiness scores. Every signal has a metric-to-score mapping. Every formula is explicit. This file + code in scripts is the source of truth for scoring.
+> **Depends on:** `README.md` (model context)
+> **Read by:** agents (before scoring), CoE (when updating scoring rules)
+> **Implemented in:** `scripts/aamm/score-readiness.sh`, `scripts/aamm/review-scores.sh`
+> **Sync rule:** Changes here MUST be reflected in the implementing scripts and vice versa.
+
 **Owner:** CoE · Dorin Solomon · **Last updated:** March 2026
 
 ---
 
 ## 1. Purpose
 
-This document defines **how** to compute Readiness scores (Navigate, Understand, Verify) operationally. It is the companion to [model-spec.md](model-spec.md), which defines **what** each pillar means.
+This document defines **how** to compute Readiness scores (Navigate, Understand, Verify) operationally. It is the companion to [README.md](README.md), which defines **what** each pillar means.
 
-An AI agent reading this document together with `model-spec.md` should have everything it needs to score the Readiness axis for any repository without further human guidance. Every signal has a concrete metric-to-score mapping. Every formula is explicit.
+An AI agent reading this document together with `README.md` should have everything it needs to score the Readiness axis for any repository without further human guidance. Every signal has a concrete metric-to-score mapping. Every formula is explicit.
 
 **No discretionary adjustments.** The formula output is the score.
 
@@ -174,7 +180,9 @@ Ignore these paths in all tree analysis: `node_modules/`, `dist/`, `build/`, `.g
 | Mentioned in docs but not configured | 15 |
 | Neither present | 0 |
 
-**How to measure:** Search tree for linter config files (e.g., `.eslintrc.*`, `eslint.config.*`, `biome.json`, `.hlint.yaml`, `clippy.toml`, `.pylintrc`, `ruff.toml`, `.stan.toml`, or equivalent) and formatter config files (e.g., `.prettierrc*`, `biome.json`, `.rustfmt.toml`, `fourmolu.yaml`, or equivalent). Tool choice is free. Check CI workflows for lint/format steps.
+**How to measure:** Search tree for linter config files (e.g., `.eslintrc.*`, `eslint.config.*`, `biome.json`, `.hlint.yaml`, `clippy.toml`, `.pylintrc`, `ruff.toml`, `.stan.toml`, or equivalent) and formatter config files (e.g., `.prettierrc*`, `biome.json`, `.rustfmt.toml`, `fourmolu.yaml`, or equivalent). **Also check `flake.nix`** for tool definitions — Nix projects often declare linters/formatters as derivations rather than standalone config files (e.g., `hlint = "3.8"` in a Nix devShell). Tool choice is free.
+
+**CI enforcement — per-tool:** Check CI workflows for lint/format steps. Score "enforced in CI" (100) only when **both** linter and formatter are CI-enforced. If only one is CI-enforced, score as "both configured" (80). Check for specific tool names in workflows, not generic keywords like `lint` or `format` which match too broadly. **npm/NX monorepo patterns:** `npm run lint`, `npm run check:lint`, `npx nx affected --target=lint` count as linter CI enforcement when the underlying tool (ESLint, Biome) is configured. Similarly, `npm run check:format` counts as formatter CI enforcement. These are npm script wrappers for the actual tool. **Nix-based CI:** `nix flake check` counts as CI enforcement for both tools if the flake includes both checks. `nix develop` alone does not — it provides tools but doesn't enforce their use.
 
 **"Custom rules" means:** For **linters**: config file with project-specific rules beyond defaults (disabled checks, custom patterns, severity overrides). For **formatters**: any config file with project-specific settings (indentation, line length, comma style, etc.) — a formatter config file IS custom rules because its presence means the team chose specific formatting standards. An empty or absent config file = defaults.
 
@@ -262,7 +270,7 @@ Navigate = sum(signal_score_i * signal_weight_i)
 | Dynamically typed with sparse type hints | 25 |
 | Dynamically typed, no type hints | 0 |
 
-**How to measure:** Check primary language. For TypeScript: parse `tsconfig.json` for `strict`, `strictNullChecks`, `noImplicitAny` flags. For Haskell/Rust: start at 100. For Python: estimate type hint coverage from sampled files (presence of `: type` annotations on function parameters).
+**How to measure:** Check primary language. For TypeScript: parse `tsconfig.json` for `strict`, `strictNullChecks`, `noImplicitAny` flags. For monorepos using NX or Turborepo, also check `tsconfig.base.json` at the root when `tsconfig.json` is absent. For Haskell/Rust: start at 100. For Python: estimate type hint coverage from sampled files (presence of `: type` annotations on function parameters).
 
 **Mixed-language caveat:** If >15% of source files are in a weakly-typed or untyped language (C, Assembly, JavaScript) — e.g., via FFI bindings — cap U1 at 85. The type-safe primary language cannot protect the untyped boundary code. This applies regardless of primary language.
 
@@ -280,13 +288,9 @@ Navigate = sum(signal_score_i * signal_weight_i)
 | 10-30% | 25 |
 | <10% | 0 |
 
-**How to measure:** Use the deterministic sample (Section 3). For each file, use regex to count:
-- **TypeScript:** `export` declarations and `/** */` JSDoc blocks preceding them
-- **Haskell:** top-level type signatures and `-- |` / `-- ^` / `{- |` / `{- ^` Haddock comments. If a module has no explicit export list, treat all top-level type signatures as public. If it has an export list, count only exported names.
-- **Rust:** `pub fn` / `pub struct` declarations and `///` doc comments
-- **Python:** `def` / `class` declarations and triple-quoted docstrings
+**How to measure:** The collection step samples 5 representative source files (excluding tests, generated code, files under 500 bytes). Scorer counts documented public items vs total public items per language: Rust (`///` doc comments vs `pub fn/struct/enum/trait`), TypeScript (`/**` blocks vs `export` declarations), Haskell (`-- |` Haddock vs top-level type signatures), Python (docstrings vs `def`/`class`). Sampled files are saved as `sampled_u2_*` in the data directory. Override is still supported but no longer required for standard languages.
 
-Compute ratio across all sampled files. This is a regex heuristic, not AST parsing.
+**Partial failures:** If some files fail to fetch, compute ratio from successful files only. Note failure count in evidence.
 
 ---
 
@@ -304,7 +308,7 @@ Compute ratio across all sampled files. This is a regex heuristic, not AST parsi
 
 Score = sum of points for sections present. Max 100.
 
-**How to measure:** Fetch README.md. Search for section headings matching keywords. Score a section as present only if it has substantive content beyond a heading.
+**How to measure:** Fetch README.md. Search for section headings at **any heading level** (`#` through `######`) matching keywords. Many repos use `#` (H1) for top-level sections, not `##` (H2). Match keywords: Setup/Install/Build/Building/Testing (setup), Usage/Examples/How-to (usage), Architecture/Design/Structure/Overview (arch), Contributing/Development (contrib). Score a section as present only if it has substantive content beyond a heading. Heading detection allows up to 20 characters before the keyword to accommodate emoji or icon prefixes (e.g., `## :rocket: Getting started`).
 
 ---
 
@@ -336,7 +340,9 @@ Score = sum of points for sections present. Max 100.
 | Minimal schemas (only framework-required, e.g., DB migrations) | 25 |
 | No explicit schema definitions | 0 |
 
-**How to measure:** Search tree for schema files: `.proto`, `.graphql`, `.cddl`, `openapi.yaml`, `swagger.json`. Search manifest dependencies for **schema/validation** libraries: `zod`, `io-ts`, `valibot` (TypeScript), `pydantic` (Python), `servant` + `servant-openapi3` (Haskell API schemas), `proto-lens` (Haskell protobuf). Count and assess coverage.
+**How to measure:** Search tree for schema files: `.proto`, `.graphql`, `.cddl`, `openapi.yaml`, `swagger.json`. Search manifest dependencies for **schema/validation** libraries: `zod`, `io-ts`, `valibot`, `yup`, `joi` (TypeScript), `pydantic` (Python), `servant` + `servant-openapi3` (Haskell API schemas), `proto-lens` (Haskell protobuf). Count and assess coverage.
+
+**Contract-first architecture:** TypeScript monorepos using `packages/contract/` or `contracts/` directories with typed interface boundaries represent a de facto schema pattern. When no literal schema files exist but 5+ contract packages define typed boundaries, score as "some schema definitions" (50). This is a conservative heuristic — override recommended for deeper assessment.
 
 **Note:** Serialization libraries (`aeson`, `serde`, `JSON.parse`) are NOT schema libraries. They encode/decode data but don't validate structure at boundaries. Only count libraries that enforce data shape contracts (validation, type-checked API definitions, or formal schema languages).
 
@@ -376,6 +382,10 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 
 **How to measure:** Count files matching test patterns. Count source files (language-specific extensions, excluding generated). Compute ratio.
 
+**Language notes:**
+- **Rust:** Conventional pattern is inline `#[cfg(test)]` modules inside source files — these are invisible to a file-count ratio. A Rust repo with ratio 0.1–0.2 may have substantial inline test coverage. Manual override is recommended when sampled source files contain `#[cfg(test)]` blocks.
+- **TypeScript/JavaScript monorepos:** E2E test infrastructure directories (e.g., `*-e2e/src/` containing page objects, assertions, step definitions) are test support code, not source. If such directories appear in the source count, reclassify them as test files and override V1 accordingly.
+
 ---
 
 ### V2: Test Categorization (weight: 0.20)
@@ -389,7 +399,15 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 | 1 category but well-organized | 50 |
 | Tests exist but no categorization | 25 |
 
-**How to measure:** Look for directory structure, framework detection, and dedicated CI jobs.
+**How to measure:** Look for directory structure, framework detection, dedicated CI jobs, and filename patterns.
+
+**Unit test detection heuristics:**
+- **Path keywords:** `unit/`, `__tests__/`, `Unit` in test file paths
+- **Filename patterns:** `.test.ts`, `.test.tsx`, `.spec.ts`, `.spec.js` files — count as unit tests ONLY when NOT in E2E/integration directories (e.g., exclude files matching `e2e/`, `integration/`, `playwright/`, `cypress/`, `storybook/`)
+- **Rust inline tests:** `#[cfg(test)]` modules in sampled source files indicate unit tests (invisible to file-count ratio)
+- **CI workflow frameworks:** Jest, Vitest, cargo test/nextest, pytest, HUnit/Tasty in workflow files suggest unit test execution
+
+**E2E/visual regression detection from CI workflows:** Playwright, Cypress, WebdriverIO, BrowserStack patterns in workflow YAML indicate E2E testing. Chromatic, Percy, BackstopJS patterns indicate visual regression testing.
 
 **Recognized test categories** (a category is distinct if it tests a fundamentally different property):
 
@@ -405,11 +423,11 @@ If zero tests exist → Verify capped at 15. The agent determines "zero tests" a
 
 BDD frameworks (Cucumber, hspec) count as integration or unit depending on scope — they are a style, not a distinct category. A repo needs evidence of **distinct test strategies**, not just multiple framework names.
 
-**Blockchain domain profile — V2 sub-signals** (supplementary, reported alongside V2 score):
+**High-assurance domain profile — V2 sub-signals** (supplementary, reported alongside V2 score):
 
 | Sub-signal | How to detect | What it indicates |
 |-----------|--------------|-------------------|
-| Generator discipline | `cover`/`classify`/`tabulate`/`checkCoverage` in test files | Generators produce diverse, verified input distributions |
+| Generator discipline | `cover`/`classify`/`tabulate`/`checkCoverage`/`forAllShrink`/`forAllBlind`/`withMaxSuccess`/`forAllShow` in test files | Generators produce diverse, verified input distributions |
 | Custom generators | Explicit `Arbitrary` instances with `shrink` definitions | Generators are hand-crafted for domain correctness, not generic |
 | Conformance oracle | Test references to Agda/formal spec, `conformance/` directories | Tests verify against external specification, not just internal consistency |
 | Adversarial testing | Generator names containing `Adversarial`, `Malicious`, `Invalid`, `Corrupt` | Tests actively probe failure modes, not just happy paths |
@@ -430,7 +448,7 @@ These sub-signals distinguish between "property tests exist" (V2 category count)
 | CI exists but does not run tests | 20 |
 | No CI at all | 0 |
 
-**How to measure:** Parse `.github/workflows/*.yml` for test execution steps. Check for required status checks. This is the ONLY signal that scores test-in-CI — Navigate's CI/CD signal (N6) excludes test execution.
+**How to measure:** Parse `.github/workflows/*.yml` for test execution steps. Check for required status checks. Detect PR-trigger by checking for `pull_request` in workflow `on:` block. Detect main-push trigger by additionally checking for `push:` with `branches: main` or `branches: master` in the same workflow. Score 100 only when both triggers are present in a workflow that also runs tests. This is the ONLY signal that scores test-in-CI — Navigate's CI/CD signal (N6) excludes test execution.
 
 ---
 
@@ -446,6 +464,8 @@ These sub-signals distinguish between "property tests exist" (V2 category count)
 | No coverage tooling | 0 |
 
 **How to measure:** Check for coverage config (e.g., `c8`, `istanbul`/`nyc`, `vitest --coverage`, `cargo-tarpaulin`, `hpc`, `pytest-cov`, SonarCloud, Codecov, or equivalent). Check CI for coverage steps and threshold assertions. Any coverage tool counts.
+
+**Detection precision:** Match specific coverage tool names, not generic words. The word `coverage` alone is too common in CI files (appears in unrelated contexts like "code coverage" comments, variable names, etc.). The pattern `--min` matches non-coverage flags like `--minimize-conflict-set`. Threshold detection must require coverage context: `coverage.*threshold`, `--check-coverage`, `--cov-fail-under`, `fail-under` — not standalone `--min` or `threshold`.
 
 **Haskell note:** `hpc` (Haskell Program Coverage) ships with GHC but is difficult to configure for multi-package `cabal.project` setups (no native cross-suite merging, limited CI integration). Score 30 ("in dependencies but not configured") if `hpc` or `cabal test --enable-coverage` appears in docs or scripts but doesn't run in CI. Score 0 only if coverage is completely absent from docs, scripts, and CI. This reflects that hpc availability ≠ hpc usability for large projects.
 

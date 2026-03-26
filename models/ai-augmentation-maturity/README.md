@@ -1,5 +1,12 @@
 # AI Augmentation Maturity Model (AAMM)
 
+> What AAMM is, what it measures, and how to read your report. For external teams and CoE leadership.
+> **Depends on:** nothing (this is the entry point)
+> **Read by:** scanned teams, leadership, CoE operators, agents (for context before scoring)
+> **Scoring details in:** `readiness-scoring.md`, `adoption-scoring.md`
+> **Domain profiles in:** `domain-profiles.md`
+> **Implemented in:** `scripts/aamm/` pipeline
+
 **Owner:** CoE · Dorin Solomon · **Last updated:** March 2026
 
 ---
@@ -309,16 +316,20 @@ Stage 1 (Configured) requires **both**:
 
 **AI config quality check — content-category checklist (replaces v3's 50-line threshold):**
 
-An AI config file satisfies Condition B only if it contains substantive content in **at least 3** of these categories:
+An AI config file satisfies Condition B only if it contains substantive content in **at least 3 of 8** categories:
 
-| Category | Examples |
-|---|---|
-| Architecture | Module boundaries, dependency relationships, key abstractions |
-| Conventions | Naming patterns, formatting, style preferences, preferred approaches |
-| Testing | Test frameworks, coverage expectations, test types, test conventions |
-| Security | Security-critical modules, trust boundaries, sensitive data flows |
-| Delivery | Versioning, changelog format, release process, estimation approach |
-| Operations | Deployment topology, monitoring, runbook locations |
+| # | Category | Examples |
+|---|---|---|
+| 1 | Architecture | Module boundaries, dependency relationships, key abstractions, package structure |
+| 2 | Conventions | Naming patterns, formatting, style preferences, preferred approaches, anti-patterns |
+| 3 | Testing | Test frameworks, coverage expectations, test types, test conventions, how to run tests |
+| 4 | Security | Security-critical modules, trust boundaries, sensitive data flows, where AI should NOT generate code |
+| 5 | Delivery | Versioning, changelog format, release process, estimation approach, branching strategy |
+| 6 | Operations | Deployment topology, monitoring, runbook locations, environment configuration |
+| 7 | Build system | How to build, toolchain versions, package manager specifics, environment setup, CI/CD conventions |
+| 8 | Formal specification | Which modules implement which spec rules, verification strategy, invariants, spec-to-code mapping |
+
+Categories 7–8 are especially relevant for Haskell/high-assurance repos where build complexity (Nix + Cabal) and formal spec compliance are critical for AI effectiveness. The gate remains at ≥3 of 8 — the additional categories increase opportunity, not the bar.
 
 Files that do NOT satisfy Condition B:
 - Empty or stub files
@@ -416,11 +427,14 @@ For leadership and CoE — scannable in 30 seconds:
 
 For tech leads — actionable in 2 minutes:
 
-- Readiness composite + per-pillar scores (3 numbers)
-- Adoption per dimension (5 stages)
-- Risks (flagged automatically)
-- 3 recommendations with measured outcomes
-- Quadrant placement
+1. **Risks** (first — severity-ordered, including domain-specific risk flags)
+2. **Summary** — Readiness composite + per-pillar scores, Adoption per dimension (5 stages), Quadrant placement
+3. **Domain Profile** (if applicable) — supplementary signals table, domain risk flags, AI value framing
+4. **Readiness breakdown** — per-signal scores with evidence
+5. **Adoption breakdown** — per-dimension Condition A/B + stage
+6. **Principal Engineer Review** — corrections applied (with reasons), notes flagged for operator attention, adjusted readiness score (if corrections changed it)
+7. **Actionable Recommendations** — language-specific, domain-specific, score-driven. Includes: what to do, why, concrete example. For high-assurance repos: AI role table (threat modeler, completeness auditor, generator reviewer, etc.)
+8. **Evidence log** — metadata, score summary, formula breakdown
 
 ### 6.3 Evidence Log
 
@@ -435,90 +449,13 @@ For audit and transparency — available on demand:
 
 ## 7. Domain Profiles
 
-The universal model scores all repos equally. Domain profiles add **supplementary signals and risk flags** without changing the core architecture. Profiles are optional annotations — they enrich the report, they don't replace the universal score.
-
-### 7.1 Blockchain Profile
-
-Applies to repos that: implement consensus/validation rules, handle financial transactions, have formal specifications, or process cryptographic operations.
-
-**Detection:** Presence of `.agda` files, `formal-spec/` directory, `.cddl` files, `SECURITY.md` with vulnerability disclosure, or explicit blockchain/ledger keywords in repo description/topics.
-
-**Supplementary signals** (reported alongside universal scores, not replacing them):
-
-| Signal | How to detect | Why it matters |
-|--------|--------------|----------------|
-| Formal spec presence | `.agda` files, `formal-spec/` dirs | Primary defense against consensus bugs |
-| Conformance testing | `conformance/` dirs, Agda refs in test infrastructure | Bridges spec-implementation gap |
-| Generator discipline | `cover`/`classify`/`tabulate`/`checkCoverage` in test files | Property tests are only as good as generators |
-| Concurrency testing | `io-sim`, `io-classes`, `dejafu` in dependencies | Network-layer correctness |
-| Strict evaluation discipline | `StrictData`, `BangPatterns` in default-extensions, `Strict*Var` wrappers | Memory safety under adversarial load |
-| Benchmark with regression detection | `criterion`/`tasty-bench` + CI alert on regression | Performance regression is a DoS vector |
-| CDDL completeness | `.cddl` files per era/protocol version | Serialization correctness across versions |
-| Reproducible builds | `nix build` in CI + hash verification | Build supply chain integrity |
-| .aiignore on critical paths | `.aiignore` excluding consensus/crypto directories | Mature AI governance — team knows where AI should NOT operate |
-
-**Recommendation adjustments for blockchain repos:**
-
-- Frame AI as **adversarial reviewer/challenger/auditor** on critical code — threat modeling, completeness checks, generator quality review, performance challenge
-- Frame AI as **quality driver** on documentation, test scaffolding, PR quality, issue decomposition
-- Frame AI as **code generator** only on boilerplate, serialization from specs, mechanical refactoring
-- Never recommend "increase AI co-authorship" on consensus/crypto code without qualifying scope
-- Recognize `.aiignore` excluding critical paths as a positive governance signal
-
-**Domain-specific risk flags:**
-
-| Risk | Condition | Severity |
-|------|-----------|----------|
-| No conformance testing | Formal spec detected but no conformance tests | 🔴 High |
-| No concurrency testing framework | Network/distributed code but no io-sim/dejafu | 🟡 Medium |
-| Formal spec stale | `.agda` files not modified in 6+ months while implementation changed | 🟡 Medium |
-| No benchmark regression detection | Performance-sensitive code without CI benchmarks | 🟡 Medium |
-
-### 7.2 Future Profiles
-
-Additional profiles can be defined for: web applications (npm threat model, runtime validation), libraries (API stability, documentation completeness), infrastructure/DevOps (IaC scanning, secret management). Each profile follows the same pattern: supplementary signals + recommendation adjustments + domain risk flags.
+See [domain-profiles.md](domain-profiles.md) for supplementary signals and recommendation framing per domain category (high-assurance, future: web apps, libraries, infra).
 
 ---
 
-## 8. Automation Requirements
+## 8. Automation
 
-
-### 7.1 API Budget
-
-Target: **≤ 50 GitHub API calls per repo.** For 29 repos: ≤ 1,450 calls (well within 5,000/hour rate limit).
-
-| Call type | Estimated count | Used for |
-|---|---|---|
-| Repo metadata | 1 | Languages, description, settings |
-| Tree (recursive) | 1 | File listing, sizes, structure |
-| Config file contents | 5-10 | AI config, tsconfig, package.json, CI workflows |
-| README.md | 1 | README substance |
-| Recent PRs | 1-2 | AI activity detection, bot authors |
-| Recent commits | 1 | Co-authorship patterns |
-| Releases | 1 | Changelog signal |
-| Source file samples | 10-15 | Doc coverage, naming, type analysis |
-| **Total** | **~25-35** | |
-
-### 7.2 Signals Excluded from v3
-
-The following v3 signals are removed because they require AST parsing or excessive API calls:
-
-| Dropped signal | Reason | Replacement |
-|---|---|---|
-| Circular dependency analysis | Requires 100+ file content reads, language-specific parsing | Module boundary analysis from build manifests |
-| Doc comment coverage (precise) | Requires AST to identify public functions | Regex-based heuristic on sampled files |
-| `any` count (exhaustive) | Requires scanning all .ts files | Sample-based estimation (15-20 files) |
-| `pub` visibility ratio (Rust) | Requires scanning all .rs files | Sample-based estimation |
-| Explicit Haskell exports (precise) | Requires parsing module declarations | Sample-based estimation |
-
-### 7.3 Determinism Guarantee
-
-Two agents scoring the same repository at the same point in time MUST produce identical scores. This is achieved by:
-
-1. **No discretionary adjustments.** The formula output IS the score.
-2. **Fixed sampling strategy.** When sampling source files, the agent uses a deterministic selection: the N largest files by size from the tree API, plus the N most recently modified. No random sampling.
-3. **Explicit thresholds.** Every metric-to-score mapping is a table lookup or formula, never a judgment call.
-4. **Content-category checklist for AI config.** Not a line count, not a quality judgment — a checklist of categories present/absent.
+The scan pipeline is fully automated and non-interactive. See `scripts/aamm/` and the toolkit's `CLAUDE.md` for pipeline details. API budget: ≤50 calls per repo. Determinism guarantee: same repo state = same score, always.
 
 ---
 
@@ -534,7 +471,7 @@ This is AAMM v4. Key changes from v3:
 | Stage 4 | Defined but unfalsifiable | Removed (not measurable in 2026) |
 | Language bonuses | +0 to +15 per pillar, per language | Removed. Universal signals are language-aware where needed. |
 | Penalties | None | 3 penalties for dangerous behaviors (-5 to -10 on Readiness) |
-| AI config quality gate | ~50 lines (guideline, not hard cutoff) | Content-category checklist (≥3 of 6 categories) |
+| AI config quality gate | ~50 lines (guideline, not hard cutoff) | Content-category checklist (≥3 of 8 categories) |
 | Agent judgment | ±5 discretionary adjustments per pillar | Eliminated. Formula = score. |
 | Double-counting | CI, lockfiles, Nix scored in multiple pillars | Each artifact → exactly one signal |
 | Infeasible signals | Circular deps, full-source scanning | Removed or replaced with sampling heuristics |
@@ -544,6 +481,18 @@ This is AAMM v4. Key changes from v3:
 | Reproducibility | ±5 points claimed but mathematically impossible | Identical scores guaranteed by deterministic design |
 | MCP config status | Ambiguous (accepted but doesn't count) | Explicit: Governance Condition A only, not Condition B |
 | Recommendations | "Create CLAUDE.md" | Measured outcomes with targets and timelines |
+
+---
+
+## Design Principles
+
+- Formula = score. Zero discretionary adjustments.
+- Domain profiles are supplementary — they enrich, they don't replace.
+- AI as adversarial reviewer/challenger, not just code generator.
+- Review step catches known blind spots; agent judgment handles the rest.
+- Reports must produce action, not just numbers.
+- Stages describe not just "is AI present?" but "is AI getting better over time?"
+- CMM = foundation, AI Aug = amplifier, Vitals = outcome.
 
 ---
 

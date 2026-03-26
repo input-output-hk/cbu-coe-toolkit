@@ -19,3 +19,10 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Claude Code local settings (per-user permissions)
+.claude/settings.json
+
+# Local working docs (not part of model definitions)
+**/backlog.md
+PERSONAL_PLAN.md

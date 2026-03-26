@@ -58,7 +58,11 @@ orgs:
   - name: input-output-hk
     repos:
       - repo: lace
-        project: Lace Wallet
+        project: Lace Wallet (v1 — legacy)
+        language: TypeScript
+
+      - repo: lace-platform
+        project: Lace Wallet (v2)
         language: TypeScript
 
       - repo: mithril
@@ -94,9 +98,6 @@ orgs:
         language: unknown
         notes: Private — may be inaccessible
 
-      - repo: afv-rpc-api
-        project: Plutus HA — Formal Verification
-        language: Lean
 
       - repo: sc-tools-experiments
         project: Plutus HA — PBT

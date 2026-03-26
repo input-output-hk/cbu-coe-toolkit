@@ -1,0 +1,260 @@
+{
+  "metadata": {
+    "model_version": "1.0",
+    "scan_date": "2026-03-26",
+    "scanned_by": "CoE (Dorin Solomon)"
+  },
+  "repository": {
+    "full_name": "input-output-hk/lace-platform",
+    "description": "The fast and easy way to explore Web3",
+    "default_branch": "main",
+    "primary_language": "TypeScript",
+    "size_kb": 133191,
+    "license": null,
+    "stars": 4,
+    "open_issues": 52,
+    "private": true
+  },
+  "readiness": {
+    "composite": 60.97,
+    "raw": 70.97,
+    "penalties_total": -10,
+    "constraints_applied": [],
+    "pillars": {
+      "navigate": {
+        "score": 89.30,
+        "weight": 0.35,
+        "signals": {
+          "N1_file_organization": {
+            "score": 100,
+            "weight": 0.12,
+            "evidence": "max_depth=11, directories=1123"
+          },
+          "N2_file_granularity": {
+            "score": 90,
+            "weight": 0.13,
+            "evidence": "median_lines=40, large_files=11, per_file_penalty=-10"
+          },
+          "N3_module_boundaries": {
+            "score": 100,
+            "weight": 0.15,
+            "evidence": "workspace_files=1, package_manifests=108"
+          },
+          "N4_separation_of_concerns": {
+            "score": 100,
+            "weight": 0.12,
+            "evidence": "top_level_dirs=13 (heuristic — override recommended)"
+          },
+          "N5_code_consistency": {
+            "score": 80,
+            "weight": 0.13,
+            "evidence": "linter=1, formatter=1, ci_linter=0, ci_formatter=0, configs=114"
+          },
+          "N6_cicd_pipeline": {
+            "score": 100,
+            "weight": 0.15,
+            "evidence": "workflows=18, has_build=1, has_deploy=1, days_since_push=0"
+          },
+          "N7_reproducible_env": {
+            "score": 60,
+            "weight": 0.12,
+            "evidence": "flake=0, flake_lock=0, docker=0, lockfile=1"
+          },
+          "N8_repo_foundations": {
+            "score": 75,
+            "weight": 0.08,
+            "evidence": "codeowners=1, gitignore_cats=5(35), security_md=0"
+          }
+        }
+      },
+      "understand": {
+        "score": 62.50,
+        "weight": 0.35,
+        "signals": {
+          "U1_type_safety": {
+            "score": 100,
+            "weight": 0.30,
+            "evidence": "TypeScript strict: true (via tsconfig.base.json — NX pattern)"
+          },
+          "U2_doc_coverage": {
+            "score": 25,
+            "weight": 0.25,
+            "evidence": "Not sampled — requires agent file content analysis. Override recommended."
+          },
+          "U3_readme_substance": {
+            "score": 100,
+            "weight": 0.15,
+            "evidence": "readme_lines=562, desc=1, setup=1, usage=1, arch=1, contrib=1"
+          },
+          "U4_architecture_docs": {
+            "score": 75,
+            "weight": 0.15,
+            "evidence": "adrs=25, architecture_md=0"
+          },
+          "U5_schema_definitions": {
+            "score": 0,
+            "weight": 0.15,
+            "evidence": "schema_files=0 (heuristic — override recommended for dep-based schemas like zod/io-ts)"
+          }
+        }
+      },
+      "verify": {
+        "score": 59.50,
+        "weight": 0.30,
+        "hard_gate": "PASS (389 test files)",
+        "signals": {
+          "V1_test_source_ratio": {
+            "score": 25,
+            "weight": 0.30,
+            "evidence": "ratio=.171 (389 test / 2264 source)"
+          },
+          "V2_test_categorization": {
+            "score": 50,
+            "weight": 0.20,
+            "evidence": "detected_categories=1 [integration/e2e] (heuristic — override recommended)"
+          },
+          "V3_ci_test_execution": {
+            "score": 100,
+            "weight": 0.30,
+            "evidence": "ci_test=1, ci_blocking=1, ci_on_main=1"
+          },
+          "V4_coverage_config": {
+            "score": 60,
+            "weight": 0.20,
+            "evidence": "coverage_tool=1, threshold=0"
+          }
+        }
+      }
+    },
+    "penalties": {
+      "prs_without_review": {
+        "unreviewed": 0,
+        "total_checked": 320,
+        "applied": false,
+        "impact": -0
+      },
+      "no_vulnerability_monitoring": {
+        "dependabot": 1,
+        "renovate": 0,
+        "covers_primary": 0,
+        "ci_security": 0,
+        "dep_strategy": 1,
+        "status": "lockfile present but no vulnerability scanning configured for TypeScript (-5)",
+        "applied": true,
+        "impact": -5
+      },
+      "no_branch_protection": {
+        "status": "not_found",
+        "applied": true,
+        "impact": -5
+      }
+    }
+  },
+  "adoption": {
+    "composite": 52.80,
+    "total_ai_signals": 35,
+    "detection_layers": {
+      "L1_tree": {
+        "count": 26,
+        "files": ".claude/agents/codebase-locator.md,.claude/agents/confluence-page-researcher.md,.claude/agents/figma-design-researcher.md,.claude/agents/general-researcher.md,.claude/agents/git-commit-researcher.md,.claude/agents/jira-ticket-researcher.md,.claude/agents/web-fetch-researcher.md,.claude/commands/git-commit.md,.claude/commands/plan.md,.claude/commands/prompt-engineer.md,.claude/commands/research.md,.claude/commands/test/analyze-mobile-integration.md,.claude/commands/test/create-mobile-integration.md,.claude/docs/PRINCIPLES.md,.claude/docs/cli-development.md,.claude/docs/development.md,.claude/docs/ui-development.md,.claude/gha-code-review-request.md,.claude/gha-implementation-request.md,.claude/settings.json,.claude/skills/git-commit/SKILL.md,.claude/skills/nx/SKILL.md,.claude/skills/troubleshoot/SKILL.md,.cursorignore,.mcp.json,CLAUDE.md"
+      },
+      "L2_commits": {
+        "count": 1
+      },
+      "L3_pr_author": {
+        "copilot_swe": 0,
+        "coderabbit": 0,
+        "copilot": 0,
+        "total": 0
+      },
+      "L4_pr_body": {
+        "count": 8
+      },
+      "L5_submodules": {
+        "count": 0,
+        "inaccessible": ""
+      }
+    },
+    "dimensions": {
+      "code": {
+        "stage": "Active",
+        "score": 66,
+        "weight": 0.25,
+        "condition_a": {
+          "met": true,
+          "evidence": "linter=1, codeowners=1"
+        },
+        "condition_b": {
+          "met": true,
+          "evidence": "AI config .claude/commands/test/create-mobile-integration.md: 7/8 categories, includes Architecture + Conventions"
+        },
+        "annotation": "Active AI usage detected"
+      },
+      "testing": {
+        "stage": "Active",
+        "score": 66,
+        "weight": 0.25,
+        "condition_a": {
+          "met": true,
+          "evidence": "test execution found in CI workflows"
+        },
+        "condition_b": {
+          "met": true,
+          "evidence": "AI config .claude/commands/test/create-mobile-integration.md: 7/8 categories, includes Testing"
+        },
+        "annotation": "Active AI usage detected"
+      },
+      "security": {
+        "stage": "None",
+        "score": 0,
+        "weight": 0.20,
+        "condition_a": {
+          "met": false,
+          "evidence": "dependabot exists but doesn't cover TypeScript"
+        },
+        "condition_b": {
+          "met": true,
+          "evidence": "AI config .claude/commands/test/create-mobile-integration.md: 7/8 categories, includes Security"
+        },
+        "annotation": "AI config present, practice not active"
+      },
+      "delivery": {
+        "stage": "Active",
+        "score": 66,
+        "weight": 0.15,
+        "condition_a": {
+          "met": true,
+          "evidence": "build_workflow=true, issues=true (open=52)"
+        },
+        "condition_b": {
+          "met": true,
+          "evidence": "AI config .claude/commands/test/create-mobile-integration.md: 7/8 categories, includes Delivery"
+        },
+        "annotation": "Active AI usage detected"
+      },
+      "governance": {
+        "stage": "Active",
+        "score": 66,
+        "weight": 0.15,
+        "condition_a": {
+          "met": true,
+          "evidence": "26 AI config files in tree, 0 in submodules"
+        },
+        "condition_b": {
+          "met": true,
+          "evidence": "usage expectations documented + .aiignore present"
+        },
+        "annotation": "Active AI usage detected"
+      }
+    },
+    "annotations": [
+      "Code: Active AI usage detected",
+      "Testing: Active AI usage detected",
+      "Security: AI config present, practice not active",
+      "Delivery: Active AI usage detected",
+      "Governance: Active AI usage detected"
+    ],
+    "risk_flags": []
+  },
+  "quadrant": "AI-Native"
+}
