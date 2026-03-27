@@ -74,7 +74,7 @@ curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
 
 # Recent merged PRs (last 30)
 curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-  "https://api.github.com/repos/$OWNER/$REPO/pulls?state=closed&sort=updated&per_page=30" \
+  "https://api.github.com/repos/$OWNER/$REPO/pulls?state=closed&sort=updated&direction=desc&per_page=30" \
   > "$TMPDIR/prs.json"
 
 # Recent commits (last 100)

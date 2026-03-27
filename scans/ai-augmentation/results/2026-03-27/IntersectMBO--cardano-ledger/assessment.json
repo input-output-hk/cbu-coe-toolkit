@@ -1,0 +1,383 @@
+{
+  "schema_version": "5.0",
+  "criteria_version": "5.0.0",
+  "repo": "IntersectMBO/cardano-ledger",
+  "date": "2026-03-27",
+  "agent_model": "claude-opus-4-6[1m]",
+  "readiness": {
+    "structure": {
+      "status": "practiced",
+      "rubric": {
+        "S1": {
+          "met": true,
+          "evidence": "cabal.project with 28+ packages across eras/ and libs/ directories. Multi-package monorepo with explicit module boundaries per ledger era."
+        },
+        "S2": {
+          "met": true,
+          "evidence": "flake.lock present (Nix lockfile pins all dependencies reproducibly). GHC version matrix in CI (9.6-9.14). Nix flake provides hermetic builds."
+        },
+        "S3": {
+          "met": true,
+          "evidence": ".github/workflows/haskell.yml active — triggers on PR, master push, and nightly schedule. 29 recently merged PRs confirm active CI. Additional workflows: push-specs.yml, bench.yml, gh-pages.yml."
+        },
+        "S4": {
+          "met": true,
+          "evidence": "KB-validated pattern: hlint runs via nix develop --command (Nix-wrapped CI pattern). fourmolu.yaml present. No standalone .hlint.yaml but KB confirms hlint is embedded in flake.nix for this repo. Confidence: MEDIUM (Nix-wrapped detection)."
+        },
+        "S5": {
+          "met": true,
+          "evidence": "fourmolu.yaml present at repo root. Formatting enforced in CI (haskell.yml). KB pattern 'HLint + fourmolu as standard tooling' validated."
+        }
+      },
+      "rubric_score": "5/5",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "28+ cabal packages provide strong module boundaries per ledger era (Byron, Shelley, Allegra, Mary, Alonzo, Babbage, Conway) plus shared libraries. KB pattern 'cabal multi-package as module boundary signal' validated.",
+        "Nix-based build system (flake.nix + flake.lock) provides fully reproducible builds. This is stronger than lockfile-only approaches — Nix pins the entire toolchain including GHC, hlint, fourmolu, and all system dependencies.",
+        "CI matrix tests across GHC 9.6 through 9.14, providing forward-compatibility verification. This is unusually thorough.",
+        "Formatter (fourmolu) is CI-enforced, not just configured. S4 (hlint) detection relies on KB-validated Nix-wrapped pattern — scanner cannot directly grep for hlint in workflow YAML because it runs via nix develop."
+      ]
+    },
+    "clarity": {
+      "status": "practiced",
+      "rubric": {
+        "C1": {
+          "met": true,
+          "evidence": "Haskell = auto-pass per rubric. Strong static type system with algebraic data types, type classes, and GADTs used extensively across ledger eras."
+        },
+        "C2": {
+          "met": false,
+          "evidence": "KB reports 45.8% Haddock coverage across 38 packages. Criterion requires >50% of public items with doc comments. Below threshold. Note: coverage is substantial but does not meet the bar."
+        },
+        "C3": {
+          "met": true,
+          "evidence": "README.md with ~500 words. Describes all ledger eras (Byron through Conway), links to formal specifications, includes repository structure section explaining package organization."
+        },
+        "C4": {
+          "met": true,
+          "evidence": ".cddl schema files per era: allegra.cddl, alonzo.cddl, babbage.cddl, conway.cddl, byron.cddl. CDDL (Concise Data Definition Language) defines binary wire format contracts for each ledger era."
+        },
+        "C5": {
+          "met": true,
+          "evidence": "fourmolu enforces formatting style rules. HLint (via Nix) provides code style hints and naming conventions. KB pattern 'HLint + fourmolu as standard tooling' applies."
+        }
+      },
+      "rubric_score": "4/5",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "C2 (Haddock coverage) at 45.8% is close to the 50% threshold but does not meet it. This is a known gap — KB pattern 'Haddock documentation coverage' tracks this. The gap is concentrated in implementation modules rather than public API surfaces, so effective coverage of the public API may be higher than the aggregate number suggests.",
+        "CDDL schema files are a strong clarity signal — they define the exact binary serialization format for each ledger era, serving as machine-readable interface contracts. CddlSpec.hs test files verify conformance.",
+        "Haskell's type system serves as living documentation: type signatures on exported functions describe contracts more precisely than doc comments in most languages. The 45.8% Haddock gap is partially compensated by type-level documentation.",
+        "Servant-style typed APIs and era-indexed type families provide self-documenting interfaces across ledger eras."
+      ]
+    },
+    "purpose": {
+      "status": "practiced",
+      "rubric": {
+        "P1": {
+          "met": true,
+          "evidence": "README.md contains a repository structure section describing the multi-era package organization, era relationships, and formal specification links. While no dedicated ARCHITECTURE.md exists, the README architecture content exceeds 100 words of substantive structural description."
+        },
+        "P2": {
+          "met": true,
+          "evidence": "docs/adr/ directory with 9 ADRs (001-009). Well above the >=3 threshold."
+        },
+        "P3": {
+          "met": false,
+          "evidence": "No PRD, FRD, user stories, or requirements documents found. The repo contains formal mathematical specifications (Haskell/Agda) which define ledger rules, but these are implementation specifications, not product context documents explaining user needs or business requirements."
+        },
+        "P4": {
+          "met": true,
+          "evidence": ".github/PULL_REQUEST_TEMPLATE.md with structured checklist: description, tests, changelog, formatting, CDDL conformance, self-review. This serves as a Definition of Done with acceptance criteria."
+        },
+        "P5": {
+          "met": true,
+          "evidence": "README describes ecosystem position: 'Formal specifications, executable models, and implementations of the Cardano Ledger'. Era-based structure (Byron through Conway) explains evolution. Links to formal specs provide cross-repo context with the Cardano ecosystem."
+        }
+      },
+      "rubric_score": "4/5",
+      "confidence": "MEDIUM",
+      "depth_findings": [
+        "9 ADRs (001-009) is strong for architectural documentation. ADR quality cannot be assessed without reading content, but the presence and numbering suggest systematic decision recording.",
+        "P3 (product context) is understandably absent — this is a formal specification implementation repo, not a product-facing application. The 'product context' is the Cardano ledger specification itself. This is an artifact of the criterion not fully fitting infrastructure/protocol repos. Flagged for CoE lead consideration.",
+        "P1 assessed as YES based on README architecture section. No dedicated ARCHITECTURE.md exists. The README section describes package organization by era but may not cover architectural decisions, trade-offs, or cross-cutting concerns in depth.",
+        "PR template checklist includes CDDL conformance check — this is domain-specific quality assurance that goes beyond generic DoD patterns."
+      ]
+    },
+    "workflow": {
+      "status": "practiced",
+      "rubric": {
+        "W1": {
+          "met": true,
+          "evidence": "CONTRIBUTING.md with ~300 words. Covers trunk-based development, team roles, releasing process, and GHC transition notes. Substantive contributor guidance."
+        },
+        "W2": {
+          "met": true,
+          "evidence": ".github/PULL_REQUEST_TEMPLATE.md with structured checklist (description, tests, changelog, formatting, CDDL, self-review)."
+        },
+        "W3": {
+          "met": true,
+          "evidence": ".github/ISSUE_TEMPLATE/ with 3 templates: config.yml, feature_idea_ledger.yml, release-packages.md."
+        },
+        "W4": {
+          "met": true,
+          "evidence": "CODEOWNERS file present with @IntersectMBO/cardano-ledger-maintainers for repo-wide ownership and @IntersectMBO/core-tech-devx for Nix files."
+        },
+        "W5": {
+          "met": false,
+          "evidence": "No .aiignore found. No CLAUDE.md, .cursor/, .cursorrules, .mcp.json, .github/copilot-instructions.md, AGENTS.md, or GEMINI.md found. No AI config with trust boundary definitions. This is a critical gap for a high-assurance financial ledger implementation."
+        }
+      },
+      "rubric_score": "4/5",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "CONTRIBUTING.md describes trunk-based development — PRs merge to master, no long-lived branches. This is consistent with the 29 recently merged PRs pattern.",
+        "CODEOWNERS separates Nix infrastructure (@core-tech-devx) from ledger code (@cardano-ledger-maintainers) — good ownership boundary.",
+        "3 issue templates (config, feature request, release) show structured issue intake. The release-packages template indicates a formal release process.",
+        "W5 (trust boundaries) is the most impactful gap. This repo implements the Cardano ledger — a high-assurance financial system. Cryptographic modules, consensus-critical code, and formal specification implementations are security-sensitive paths that should be explicitly marked as requiring human review if AI tools are used."
+      ]
+    },
+    "safety_net": {
+      "status": "practiced",
+      "rubric": {
+        "SN1": {
+          "met": true,
+          "evidence": "test/ directories under each era: eras/allegra/impl/test/, eras/alonzo/impl/test/, etc. Extensive test infrastructure."
+        },
+        "SN2": {
+          "met": true,
+          "evidence": "Multiple test types visible: (1) Unit tests via Spec.hs files, (2) CDDL conformance tests via CddlSpec.hs, (3) Property-based tests via QuickCheck Arbitrary instances in testlib/ directories. At least 3 distinct categories."
+        },
+        "SN3": {
+          "met": true,
+          "evidence": "haskell.yml workflow runs 'cabal test' across multi-GHC matrix (9.6-9.14). Tests execute on every PR and master push."
+        },
+        "SN4": {
+          "met": true,
+          "evidence": "CI runs on PRs (haskell.yml triggers on pull_request). 29 recently merged PRs would have had CI checks. Cannot confirm branch protection rules block merge without admin access — capped at MEDIUM confidence per rubric."
+        },
+        "SN5": {
+          "met": false,
+          "evidence": "No coverage tooling detected. No hpc (Haskell Program Coverage), codecov, or coverage threshold configuration visible in CI workflows or project config."
+        }
+      },
+      "rubric_score": "4/5",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "Property-based testing via QuickCheck is a standout strength. testlib/ directories with Arbitrary instances per data type enable comprehensive state-space exploration. KB pattern 'QuickCheck property tests for state machine correctness' validated.",
+        "CDDL conformance testing (CddlSpec.hs) verifies binary serialization against formal schema definitions — this is domain-specific verification that catches protocol-level regressions.",
+        "Multi-GHC matrix testing (9.6-9.14) catches compatibility issues early. This is forward-looking quality assurance.",
+        "SN5 (coverage tooling) absence is notable. For a repo with this test maturity, adding hpc coverage reporting would provide visibility into untested paths. However, property-based testing provides coverage that line-based tools may not measure well.",
+        "SN4 confidence capped at MEDIUM: CI checks run on PRs but branch protection rules cannot be verified without admin access."
+      ]
+    }
+  },
+  "adoption": {
+    "code": {
+      "status": "exploring",
+      "rubric": {
+        "AC1": {
+          "met": false,
+          "evidence": "No AI config files found: no CLAUDE.md, .cursor/, .cursorrules, .mcp.json, .github/copilot-instructions.md, AGENTS.md, GEMINI.md, .coderabbit.yaml, or any other AI config pattern."
+        },
+        "AC2": {
+          "met": true,
+          "evidence": "2 commits with 'Co-Authored-By: Claude Opus' found in last 100 commits. 4 total co-authored-by matches, 2 confirmed as Claude Opus. This indicates emerging AI-assisted code activity."
+        },
+        "AC3": {
+          "met": false,
+          "evidence": "0 AI bot PRs (no copilot[bot], coderabbit-ai[bot] authors). 0 AI CI actions (no claude-code-action, coderabbit in workflows)."
+        }
+      },
+      "rubric_score": "1/3",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "AI adoption in code is nascent — 2 Claude Opus co-authored commits out of 100 recent commits (2%). This is individual contributor experimentation, not systematic adoption.",
+        "No AI config file means AI tools operate without project-specific context. Contributors using Claude or Copilot get generic assistance without knowledge of the ledger era architecture, CDDL requirements, or formal specification alignment."
+      ]
+    },
+    "testing": {
+      "status": "undiscovered",
+      "rubric": {
+        "AT1": {
+          "met": false,
+          "evidence": "No AI config exists, therefore no testing strategy mention in AI config."
+        },
+        "AT2": {
+          "met": false,
+          "evidence": "Cannot confirm that the 2 Claude co-authored commits modified test files. Insufficient data to determine test-specific AI attribution."
+        },
+        "AT3": {
+          "met": false,
+          "evidence": "No AI test generation or analysis tools in CI workflow YAML."
+        }
+      },
+      "rubric_score": "0/3",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "Industry limitation: AI testing adoption is difficult to detect because most AI tools do not provide per-activity attribution for test generation vs. code generation.",
+        "The repo's strong QuickCheck infrastructure would be an excellent target for AI-assisted test generation — Arbitrary instance creation and property formulation are well-suited to AI assistance."
+      ]
+    },
+    "security": {
+      "status": "undiscovered",
+      "rubric": {
+        "AS1": {
+          "met": false,
+          "evidence": "No .aiignore file found."
+        },
+        "AS2": {
+          "met": false,
+          "evidence": "No AI config exists, therefore no trust boundary definitions."
+        },
+        "AS3": {
+          "met": false,
+          "evidence": "No AI-powered security review actions in CI."
+        }
+      },
+      "rubric_score": "0/3",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "CRITICAL GAP: This is a high-assurance financial ledger implementation. Cryptographic primitives, consensus rules, and monetary policy enforcement are security-critical paths. The absence of any AI trust boundaries means AI tools have unrestricted context access to all code paths.",
+        "KB pattern '.aiignore on critical paths' directly applicable. Recommended critical paths: crypto/, formal-spec/, consensus-critical modules, key derivation, reward calculation."
+      ]
+    },
+    "product_delivery": {
+      "status": "undiscovered",
+      "rubric": {
+        "APD1": {
+          "met": false,
+          "evidence": "No AI PR summary tools or AI-structured PR description tooling configured."
+        },
+        "APD2": {
+          "met": false,
+          "evidence": "No AI changelog generators or release note tools in CI."
+        },
+        "APD3": {
+          "met": false,
+          "evidence": "No bot-created issues or AI-assisted issue management tooling."
+        }
+      },
+      "rubric_score": "0/3",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "Industry limitation: Product & Delivery AI adoption is difficult to detect without attribution. The structured PR template and release issue template suggest a mature delivery process that could benefit from AI augmentation."
+      ]
+    },
+    "governance_architecture": {
+      "status": "undiscovered",
+      "rubric": {
+        "AGA1": {
+          "met": false,
+          "evidence": "0 AI config files found. Need >=2 distinct AI tools configured."
+        },
+        "AGA2": {
+          "met": false,
+          "evidence": "No AGENTS.md, .claude/commands/, .claude/skills/, or MCP config found."
+        },
+        "AGA3": {
+          "met": false,
+          "evidence": "Only 2 Claude Opus co-authored commits detected. 4 total co-authored-by matches but cannot confirm all are AI-attributed vs. human co-authors. Insufficient data for >=50% consistency assessment. With only 2 confirmed AI commits out of 100 total, attribution consistency is moot at this scale."
+        }
+      },
+      "rubric_score": "0/3",
+      "confidence": "HIGH",
+      "depth_findings": [
+        "AI governance is absent — no multi-tool strategy, no orchestration, no systematic attribution. The 2 Claude co-authored commits represent individual experimentation without organizational governance.",
+        "This is expected for a repo at the Exploring stage of Code adoption. Governance typically follows after Code adoption matures."
+      ]
+    }
+  },
+  "recommendations": [
+    {
+      "title": "Add .aiignore for security-critical paths",
+      "what": "Create .aiignore listing crypto modules, formal specification implementations, consensus-critical reward/delegation/monetary-policy code, and key derivation paths. This prevents AI tools from modifying high-assurance code without explicit human intent.",
+      "why": "This is a financial ledger implementation where incorrect code can cause monetary loss. Without trust boundaries, AI tools have unrestricted access to all code paths. Even if AI adoption is minimal today, establishing boundaries proactively prevents risk as adoption grows.",
+      "effort": "low",
+      "impact": "HIGH",
+      "source": "KB: .aiignore on critical paths",
+      "measurable": ".aiignore file exists at repo root with >=5 critical path entries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "High-assurance financial system with no AI boundaries is an unambiguous risk. Low effort, preventive. No counter-argument."
+    },
+    {
+      "title": "Add CLAUDE.md with ledger-specific context",
+      "what": "Create CLAUDE.md covering: (1) multi-era architecture and package boundaries, (2) CDDL conformance requirements, (3) formal spec alignment expectations, (4) testing conventions (QuickCheck patterns, testlib/), (5) build commands (cabal build, cabal test, nix develop), (6) security-critical paths.",
+      "why": "2 Claude co-authored commits already exist — contributors are using AI without project context. A well-structured CLAUDE.md turns generic AI assistance into domain-aware assistance that understands era boundaries, CDDL requirements, and formal spec alignment.",
+      "effort": "low",
+      "impact": "HIGH",
+      "source": "KB: CLAUDE.md content-category coverage",
+      "measurable": "CLAUDE.md exists with >=6 sections covering architecture, conventions, testing, security, build, and workflow",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Contributors already use Claude. Providing project context is strictly better than no context. Low effort — team knows the content, just needs to write it down."
+    },
+    {
+      "title": "Add hpc coverage reporting to CI",
+      "what": "Enable Haskell Program Coverage (hpc) in CI pipeline. Configure cabal test --enable-coverage and publish reports. Start with visibility (no threshold) then add threshold after baseline is established.",
+      "why": "The repo has excellent test infrastructure (QuickCheck, CDDL conformance, unit tests) but no visibility into coverage. Adding hpc closes the SN5 gap and provides data for identifying untested paths, especially in newer era implementations.",
+      "effort": "medium",
+      "impact": "MEDIUM",
+      "source": "model-knowledge",
+      "measurable": "CI workflow contains --enable-coverage flag and coverage report artifact",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Coverage visibility is valuable. Medium effort is realistic — hpc integration requires cabal config changes and report publishing. Property-based tests may show lower line coverage than actual correctness coverage, so the team should interpret results carefully."
+    },
+    {
+      "title": "Improve Haddock documentation to >50%",
+      "what": "Add Haddock doc comments (-- | or {- | -}) to exported functions and types, prioritizing public API modules in libs/ packages that other Cardano repos depend on. Target 55% coverage to clear the 50% threshold with margin.",
+      "why": "Current 45.8% Haddock coverage is close to the 50% threshold but falls short. Improving doc coverage benefits both human developers and AI tools — doc comments provide context that improves AI code suggestions and reduces hallucination on domain-specific types.",
+      "effort": "medium",
+      "impact": "MEDIUM",
+      "source": "KB: Haddock documentation coverage",
+      "measurable": "Haddock coverage report shows >=50% across public API modules",
+      "adversarial_status": "approved",
+      "adversarial_reason": "4.2 percentage points short of threshold. Effort is medium because it requires domain knowledge to write meaningful doc comments — not just boilerplate. Prioritizing public API modules in libs/ is the right approach for maximum impact."
+    },
+    {
+      "title": "Add ARCHITECTURE.md with cross-era design decisions",
+      "what": "Create dedicated ARCHITECTURE.md documenting: (1) era-indexed type family architecture, (2) how new eras are added (era lifecycle), (3) shared libs/ vs era-specific packages, (4) formal spec to implementation mapping, (5) CDDL as interface contract. Move beyond the README structure section to capture architectural decisions and trade-offs.",
+      "why": "README has a structure section but it describes file layout, not architectural decisions. A dedicated ARCHITECTURE.md helps AI tools understand why the code is structured this way, enabling better suggestions when working across era boundaries.",
+      "effort": "medium",
+      "impact": "MEDIUM",
+      "source": "model-knowledge",
+      "measurable": "ARCHITECTURE.md exists with >=500 words covering era architecture, type family design, and formal spec mapping",
+      "adversarial_status": "approved",
+      "adversarial_reason": "README structure section is layout documentation, not architecture documentation. The distinction matters for AI tool effectiveness. Medium effort because the team needs to articulate implicit knowledge."
+    },
+    {
+      "title": "Add vulnerability scanning to CI",
+      "what": "Add cabal audit or integrate security scanning via Nix (e.g., nix flake check with security advisories). Alternatively, add dependabot.yml for Haskell ecosystem dependency monitoring.",
+      "why": "No vulnerability scanning is visible in CI. For a high-assurance financial system, automated dependency vulnerability detection is essential. This closes a risk flag.",
+      "effort": "low",
+      "impact": "HIGH",
+      "source": "model-knowledge",
+      "measurable": ".github/dependabot.yml exists with haskell ecosystem configured, OR cabal audit step in CI workflow",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Financial ledger without automated vulnerability scanning is a clear risk. Low effort for dependabot.yml. Note: Nix flake.lock provides some supply chain protection via hash pinning, but does not scan for known CVEs."
+    },
+    {
+      "title": "Document product context for formal spec relationship",
+      "what": "Add a docs/product-context.md or equivalent that explains: (1) what the Cardano ledger does from a user perspective, (2) which formal specifications govern each era, (3) how implementation correctness is validated against specs, (4) what 'done' means for a ledger era implementation.",
+      "why": "P3 (product context) is unmet. While formal specs define the mathematical rules, no document explains the product purpose in accessible terms. This gap means AI tools cannot understand the 'why' behind implementation choices.",
+      "effort": "medium",
+      "impact": "MEDIUM",
+      "source": "model-knowledge",
+      "measurable": "docs/product-context.md or equivalent exists with >=300 words explaining ledger purpose and spec relationship",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Valid gap but lower priority than security recommendations. P3 criterion may not perfectly fit formal-spec repos — flagged for CoE lead consideration. Medium impact because the team understands the product context implicitly."
+    }
+  ],
+  "risk_flags": [
+    "MISSING TRUST BOUNDARIES: High-assurance financial ledger implementation (Cardano) with no .aiignore and no AI config defining security-sensitive paths. Cryptographic modules, consensus rules, and monetary policy code have no AI access restrictions.",
+    "NO VULNERABILITY SCANNING: No dependabot, renovate, cabal audit, or security scanning detected in CI workflows. Nix flake.lock provides hash pinning but does not scan for known CVEs. For a financial system, this is a significant gap."
+  ],
+  "kb_nominations": [
+    "CDDL conformance testing as safety net pattern: cardano-ledger uses CddlSpec.hs to verify binary serialization against .cddl schema files per era. This is a domain-specific testing pattern worth documenting for other protocol repos.",
+    "Formal specification repos and P3 criterion: Protocol implementation repos where the 'product context' IS the formal mathematical specification. The P3 criterion may need a domain-specific interpretation for this repo category.",
+    "Multi-GHC matrix testing: cardano-ledger tests across GHC 9.6-9.14, catching forward-compatibility issues. This is a build reproducibility pattern worth documenting."
+  ],
+  "overrides_applied": {},
+  "readiness_level": "high",
+  "adoption_level": "medium",
+  "quadrant": "growing"
+}
