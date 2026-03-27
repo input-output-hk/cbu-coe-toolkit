@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AAMM v5 Assessment",
+  "type": "object",
+  "required": ["schema_version", "criteria_version", "repo", "date", "agent_model", "readiness", "adoption", "recommendations", "risk_flags"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "5.0" },
+    "criteria_version": { "type": "string" },
+    "repo": { "type": "string" },
+    "date": { "type": "string", "format": "date" },
+    "agent_model": { "type": "string" },
+    "readiness": {
+      "type": "object",
+      "required": ["structure", "clarity", "purpose", "workflow", "safety_net"],
+      "properties": {
+        "structure": { "$ref": "#/$defs/pillar_assessment" },
+        "clarity": { "$ref": "#/$defs/pillar_assessment" },
+        "purpose": { "$ref": "#/$defs/pillar_assessment" },
+        "workflow": { "$ref": "#/$defs/pillar_assessment" },
+        "safety_net": { "$ref": "#/$defs/pillar_assessment" }
+      }
+    },
+    "adoption": {
+      "type": "object",
+      "required": ["code", "testing", "security", "product_delivery", "governance_architecture"],
+      "properties": {
+        "code": { "$ref": "#/$defs/zone_assessment" },
+        "testing": { "$ref": "#/$defs/zone_assessment" },
+        "security": { "$ref": "#/$defs/zone_assessment" },
+        "product_delivery": { "$ref": "#/$defs/zone_assessment" },
+        "governance_architecture": { "$ref": "#/$defs/zone_assessment" }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/recommendation" }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "kb_nominations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "overrides_applied": { "type": "object" },
+    "readiness_level": { "type": "string", "enum": ["low", "medium", "high"] },
+    "adoption_level": { "type": "string", "enum": ["low", "medium", "high"] },
+    "quadrant": { "type": "string", "enum": ["traditional", "traditional+", "fertile_ground", "emerging", "growing", "risky_acceleration", "ai_native"] }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["undiscovered", "exploring", "practiced", "mastered"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["HIGH", "MEDIUM", "LOW"]
+    },
+    "pillar_assessment": {
+      "type": "object",
+      "required": ["status", "rubric", "rubric_score", "confidence", "depth_findings"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "rubric": { "type": "object" },
+        "rubric_score": { "type": "string", "pattern": "^[0-5]/5$" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "depth_findings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "zone_assessment": {
+      "type": "object",
+      "required": ["status", "rubric", "rubric_score", "confidence"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "rubric": { "type": "object" },
+        "rubric_score": { "type": "string", "pattern": "^[0-3]/3$" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "depth_findings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["title", "what", "why", "effort", "impact", "source", "measurable", "adversarial_status"],
+      "properties": {
+        "title": { "type": "string" },
+        "what": { "type": "string" },
+        "why": { "type": "string" },
+        "effort": { "type": "string", "enum": ["low", "medium", "high"] },
+        "impact": { "type": "string", "enum": ["HIGH", "MEDIUM"] },
+        "source": { "type": "string" },
+        "measurable": { "type": "string" },
+        "adversarial_status": { "type": "string", "enum": ["approved", "rejected"] },
+        "adversarial_reason": { "type": "string" }
+      }
+    }
+  }
+}

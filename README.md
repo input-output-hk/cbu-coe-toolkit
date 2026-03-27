@@ -39,7 +39,6 @@ Produces a scored report in [`scans/ai-augmentation/results/`](scans/ai-augmenta
 
 Claude Code skills for CoE operators:
 
-- **quality-gate** — self-score and iterate to 9.0+
 - **peer-review** — structured review at design, implementation, and output checkpoints
 - **scan-ai-augmentation** — guided AAMM scan execution
 - **review-model** — model spec review and consistency checking

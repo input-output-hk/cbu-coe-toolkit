@@ -4,6 +4,54 @@ Operational insights discovered during work on this repo. Newest first. Contribu
 
 ---
 
+### 2026-03-27 — Session 9: Signal audit, architecture rethink, AAMM purpose clarified
+
+- **The score is not the goal.** AAMM purpose is visibility ("where are we?") + action ("what do we do with highest ROI?"). 9 sessions optimizing score precision (boundary logic, sampling strategies, weight redistribution) produced precise numbers but superficial recommendations. The real value is in helping teams improve, not in calculating 73.4 vs 75.1. ADR-017.
+
+- **Two mechanisms for two goals.** Deterministic pipeline (grep, jq, formulas) is good for reproducible scores — leadership tracking, month-over-month comparison. AI agent is good for deep findings and specific recommendations — reading actual code, understanding context, producing "your CLAUDE.md doesn't mention the NX contract→module structure." Use each for what it's good at. Don't use AI for scoring (non-reproducible) or grep for recommendations (superficial).
+
+- **Be honest the first time, not after being challenged.** U3 was rubber-stamped as "solid, wouldn't change" then eliminated 5 minutes later when questioned. The data was there all along (80% repos at 60-100, zero substance checking). Lesson: apply the same skepticism to your own first assessment that you'd apply in adversarial review.
+
+- **Adoption is holistic SDLC, not just "has AI config."** AI can add value in: code generation, code review, PR quality (titles, descriptions, impact), testing (generation, coverage), security (review, CVE fixes), product (feature definition, user stories, acceptance criteria), delivery (release notes, changelogs, estimation), architecture (challenge, consistency, spec compliance), governance (multi-tool, attribution, boundaries). Current v4 detects <20% of these. v5 should cover the full SDLC surface.
+
+- **Indicators with confidence > scores with precision.** ✅/⚠/❌ with confidence (HIGH/MEDIUM/LOW) is more honest and useful than 73.4/100. Teams understand "Type Safety: ✅ Strong (HIGH confidence)" better than "U1=100, weight=0.30, contribution=30.00." Confidence levels also make detection limitations transparent — MEDIUM confidence on a sampled signal is honest; a precise number on the same data is false precision.
+
+### 2026-03-27 — Session 9: Signal-by-signal readiness audit, N4 removed, N8 expanded, U2 redesigned
+
+- **Signals that don't discriminate should be removed, not improved.** N4 (Separation of Concerns) scored 100 for all 29 repos. Attempts to make it smarter (pattern matching, layer detection) would add complexity without adding value. Removed (ADR-013), weight redistributed to N3 and N5 which DO discriminate.
+
+- **Repo foundations are more than 3 files.** N8 covered only CODEOWNERS + .gitignore + SECURITY.md. Expanded to 7 signals (ADR-014) including LICENSE, CONTRIBUTING.md, issue templates, PR templates — all directly relevant to AI creating issues/PRs.
+
+- **Sample quality > sample size for U2.** The "10 largest files" sampling strategy biased toward storybook stories and data files in TypeScript monorepos. Fix: breadth-first (10 files across modules) + middle-percentile by size (5 files), excluding non-production paths. Also added minimum sample gate (≥5 public items) to prevent extrapolating from insufficient data.
+
+- **Branch protection penalty was dead code.** API returned 404 for 97% of repos (GitHub Rulesets). The outcome (unreviewed code) was already caught by "PRs without review" penalty. Removed (ADR-015). Design principle: measure outcomes, not mechanisms.
+
+- **docs/ is NOT architecture documentation.** Data from 30 repos: ouroboros-consensus docs/ (292 files) contains agda-spec, formal-spec, haddocks, tech-reports, website — zero architecture. Same pattern across portfolio. U4 was inflated by counting websites and generated docs as "architecture." Redesigned: README arch section (40pts, 25/30 repos have it) + ARCHITECTURE.md (30pts) + ADRs≥3 (30pts). No docs/ fallback.
+
+- **Go and Python coverage patterns were missing.** U2 scorer had no Go counting patterns and Python counted private functions as public. Fixed: Go `func [A-Z]` + `// [A-Z]`, Python excludes `def _private`.
+
+### 2026-03-26 — Session 8: Architecture audit, mechanism-vs-outcome, adversarial review enforcement
+
+- **Measure outcomes, not mechanisms.** N7 scored Nix=100, Docker=80, lockfile+README=60 — measuring tool adoption, not reproducibility. A TypeScript repo with `.nvmrc` + `package-lock.json` is equally reproducible but scored 40 points lower. Fix (ADR-011): score what's pinned (runtime+deps=80, deps only=50), not which tool does the pinning. This principle applies to ALL signals — when reviewing any signal, ask "does this score the outcome or the tool?"
+
+- **One boolean for 5 dimensions is architecture-level broken.** `HAS_AI_ACTIVITY` (one global flag) promoted ALL adoption dimensions to Active from a single PR mentioning "Claude Code." The spec defines per-dimension Active criteria but the implementation ignored them. 1 PR → Security Active + Delivery Active + Testing Active = indefensible. Quick patches (scoping L6 to Code) were immediately defeated by L4's global flag. Lesson: when you find a per-dimension problem, check if the architecture supports per-dimension answers at all.
+
+- **Don't patch broken architecture — stop, audit, redesign.** Session applied L6 scoping (correct), but L4's global flag overrode it. Each patch exposed a new issue. The right response was to stop, audit the full adoption scoring design, document findings, and plan the fix. Dorin: "this is a big risk to aamm credibility and we need not only to fix this in the right way but to review the whole AI Adoption."
+
+- **3 of 5 adoption dimensions have Active criteria that can't be detected from GitHub API.** Testing Active needs PR diff analysis (which files did the AI commit change?). Security Active needs review comment classification (was this a security flag or a style comment?). Delivery Active needs issue author + changelog analysis. None of these are within the 50-call API budget. A model should not define criteria it cannot measure — either expand the API budget or reduce the dimensions to what's detectable.
+
+- **Adversarial review is the highest-value quality gate — enforce by default (ADR-012).** 3 reviewer agents across 3 repos found 18 issues, ~30% score drift, and 1 architecture flaw. The automated `review-scores.sh` caught 0 of these. The pattern works: main agent scans → reviewer agent reads output + spec + raw data → challenges every signal. This should be the default posture for ALL AAMM work, not just scans.
+
+- **`| head -N` in bash pipelines causes SIGPIPE on large repos.** 7 instances of `sort | head | cut` killed the scan for repos with 2000+ source files. `head` closes the pipe after N lines → `sort` gets SIGPIPE (exit 141) → `set -euo pipefail` kills the script. Fix: `| awk 'NR<=N'` reads all input, prints N lines, keeps pipe open. This is not a Haskell/Rust/TS issue — it's a bash anti-pattern that scales with repo size.
+
+- **Empty PR template placeholders are not AI signals.** `<!-- CURSOR_SUMMARY --><!-- /CURSOR_SUMMARY -->` in PR body matched L4 pattern → 6 false positives on lace-platform → inflated adoption from 33 to 52.80. Template markers without content are infrastructure artifacts, not evidence of AI activity. Fix: removed `CURSOR_SUMMARY` from L4 patterns (real Cursor usage detected by `Made with.*Cursor`).
+
+- **Dependabot.yml existence ≠ Dependabot.yml content.** The tree scan found `.github/dependabot.yml` but the collector never fetched its content. The scorer checked ecosystem coverage in a file that didn't exist → `covers_primary=0` → false -5 penalty on repos with active npm scanning. Fix: 1 API call to fetch and parse the file.
+
+- **Language-specific signals on wrong languages produce noise, not insight.** io-sim (Haskell concurrency framework) checked on Rust repos → false "no concurrency testing" risk flag. StrictData/BangPatterns (GHC extensions) checked on TypeScript → meaningless zeros in domain profile. Gate ecosystem-specific signals on `PRIMARY_LANG`.
+
+- **Readiness is publishable; Adoption Active is not.** After 8 sessions: 15 of 17 readiness signals are reliable, scores are reproducible, penalties are ecosystem-aware. Adoption Configured is reliable. Adoption Active/Integrated has a fundamental architecture flaw (global boolean) and 3 of 5 dimensions have undetectable Active criteria. Publish readiness with adoption Configured. Hold Active/Integrated until fixed.
+
 ### 2026-03-26 — Exhaustive detection, U2 sampling, markdown escaping
 
 - **Never conclude "tool absent" from one detection method.** cardano-ledger and cardano-base both use HLint, but it's defined in `flake.nix` (not `.hlint.yaml`). The scanner only checked tree file names → false negative → N5=60 instead of 100. Lesson: when a signal comes back negative, exhaust all plausible locations before scoring 0.

@@ -1,9 +1,10 @@
-# AAMM v3 — Scan Configuration
-# Signal definitions, AI config patterns, bot names, and scan settings.
-# For tracked repos, see models/config.yaml (the master list).
+# AAMM v5 — Scan Configuration
+# Rubric criteria, AI config patterns, bot names, and scan settings.
+# Repo list: models/config.yaml (the master list).
 #
-# Model version: v3.0
-# Last updated: March 2026
+# Model version: v5.0
+# Spec: docs/superpowers/specs/2026-03-27-aamm-v5-spec.md
+# Last updated: 2026-03-27
 
 # --------------------------------------------------------------------------
 # Repo List Reference
@@ -16,9 +17,9 @@ repo_list: models/config.yaml
 # Model Documents (agent reads these before scanning)
 # --------------------------------------------------------------------------
 model_documents:
-  spec: models/ai-augmentation-maturity/model-spec.md
-  adoption_scoring: models/ai-augmentation-maturity/adoption-scoring.md
-  readiness_scoring: models/ai-augmentation-maturity/readiness-scoring.md
+  spec: docs/superpowers/specs/2026-03-27-aamm-v5-spec.md
+  scanner_prompt: .claude/skills/scan-aamm-v5/prompts/scanner-system.md
+  schema: .claude/skills/scan-aamm-v5/schema/assessment-v5.schema.json
 
 # --------------------------------------------------------------------------
 # Results Location
@@ -249,25 +250,17 @@ cadence:
   # AI activity signals (PRs, commits, issues): checked since previous snapshot
 
 # --------------------------------------------------------------------------
-# Stale Config Threshold
+# v5 Exploration Settings
 # --------------------------------------------------------------------------
-stale_config:
-  days: 180  # >6 months unchanged = stale
-  effect: "Dimension cannot be rated above Low sub-level"
+exploration:
+  source_sample_size: 10     # Files to sample for Clarity/Safety Net depth
+  test_sample_size: 10       # Test files to sample for Safety Net depth
+  pr_sample_size: 30         # Recent merged PRs to analyze
+  commit_sample_size: 100    # Recent commits for co-authored-by patterns
 
 # --------------------------------------------------------------------------
-# Learning Signal Thresholds
+# v5 Schema Version
 # --------------------------------------------------------------------------
-learning_signals:
-  static:
-    description: "AI config written once, no meaningful updates"
-    threshold: "No commits to AI config files in >90 days"
-    effect: "Cannot be rated High within stage"
-  evolving:
-    description: "AI config updated based on usage"
-    threshold: "Meaningful updates to AI config, custom commands added, feedback patterns documented"
-    effect: "Normal sub-level assessment"
-  self_improving:
-    description: "Automated feedback loops, cross-repo propagation"
-    threshold: "Config evolves based on outcomes, skills self-update, cross-repo patterns"
-    effect: "Sub-level boost: Low→Mid, Mid→High"
+assessment:
+  schema_version: "5.0"
+  criteria_version: "5.0.0"
