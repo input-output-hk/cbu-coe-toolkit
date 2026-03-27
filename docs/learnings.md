@@ -4,6 +4,24 @@ Operational insights discovered during work on this repo. Newest first. Contribu
 
 ---
 
+### 2026-03-27 — Session 10: AAMM v5 complete redesign — single AI agent replaces bash pipeline
+
+- **Working backwards from the problem is more productive than forward-iterating on signals.** 9 sessions of pipeline refinement produced precise numbers but superficial recommendations. Starting with "what problem does AAMM solve?" and working backwards produced a fundamentally better model in one session: awareness gap, where to start, feedback loop, guardrails.
+
+- **Rubric + depth resolves the reproducibility vs quality trade-off.** v4 was reproducible but shallow (bash grep). Pure AI is deep but non-reproducible. Rubric (structured YES/NO criteria) + depth (qualitative findings with file citations) gives both: rubric anchors the level reproducibly, depth adds insight bash couldn't provide. Key rule: depth does NOT change the level — it adds findings only.
+
+- **3 rounds of adversarial review on the spec found 59 issues total (31→16→12).** Each round caught structural problems the previous missed. Round 1 found the ADR-017 contradiction and missing level criteria. Round 2 found the 3-criteria scale mismatch and false determinism claims. Round 3 found CLAUDE.md sync and data access gaps. Adversarial review at the spec level is as valuable as at the scan level.
+
+- **First v5 scan validated the model: adversarial review caught a quadrant miscalculation.** cardano-ledger scored HIGH readiness, MEDIUM adoption (Growing quadrant). The scanner incorrectly classified adoption as LOW — adversarial review caught this by re-checking the derivation rules. Also caught: dependabot activity the scanner missed, PR data fetched from 2018 instead of recent.
+
+- **KB pre-seeding from previous sessions is essential for first-scan credibility.** An empty KB produces generic recommendations. Pre-seeding with 22 validated patterns from 9 sessions (5 Haskell, 4 TypeScript, 4 Rust, 3 Python, 3 cross-cutting, 3 anti-patterns) meant the first v5 scan already had ecosystem-specific context.
+
+- **Single agent > dual architecture when the rubric provides structure.** ADR-017's dual architecture (pipeline + agent) was the right instinct (use each for its strength) but wrong implementation (two systems to maintain). The rubric embedded in the agent prompt achieves the same goal with one system. ADR-018 supersedes.
+
+- **Subagents can't write files — plan for this in skill design.** Claude Code subagents spawned via Agent tool don't have Write/Bash permissions. Data collection and file creation must happen in the main conversation or be pre-created before dispatching subagents.
+
+- **PR API default sort order returns oldest first.** `GET /repos/{owner}/{repo}/pulls?state=closed&sort=updated` returns ascending by default. Must add `&direction=desc` for recent PRs. This caused the scanner to analyze 2018 PRs instead of 2026.
+
 ### 2026-03-27 — Session 9: Signal audit, architecture rethink, AAMM purpose clarified
 
 - **The score is not the goal.** AAMM purpose is visibility ("where are we?") + action ("what do we do with highest ROI?"). 9 sessions optimizing score precision (boundary logic, sampling strategies, weight redistribution) produced precise numbers but superficial recommendations. The real value is in helping teams improve, not in calculating 73.4 vs 75.1. ADR-017.
