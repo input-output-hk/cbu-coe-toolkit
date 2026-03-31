@@ -34,7 +34,7 @@ Collect all of the following before any assessment begins. Do not assess while c
 | File tree (full) | GitHub API: repo contents / git ls-tree | Needed for: module structure, test directories, config files, documentation density |
 | Key file contents | GitHub API: file contents | Read: README.md, CLAUDE.md, CONTRIBUTING.md, .aiignore, CI workflow files, package manifests, AI config files (.cursorrules, .mcp.json, AGENTS.md, copilot-instructions.md). If a file doesn't exist, record its absence — that's data too. |
 | Git history summary | GitHub API: commits (last 100) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency |
-| High-churn modules | Derived from git history | For each of the last 100 commits, collect the set of parent directories of changed files (deduplicated per commit). Exclude root-level files. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. This avoids distortion from bulk refactoring commits. Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`, not 50. |
+| High-churn modules | Derived from git history | For each of the last 100 commits, collect the immediate parent directory of each changed file (strip trailing filename, keep the path — e.g., `src/foo/bar.ts` → `src/foo`). Deduplicate directories within each commit. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. Exclude files at repo root (no parent directory). Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`. |
 | PR data | GitHub API: PRs (last 30 merged) | Extract: review counts, CI check status, AI bot activity, PR descriptions |
 | CI configuration | Workflow YAML files | Extract: test steps, linter steps, security scanning, AI tools in CI |
 | Ecosystem detection | Package manifests + file extensions | Primary ecosystem determines which KB patterns to load |
@@ -239,8 +239,9 @@ Recommendations ordered by **ROI descending**.
 
 `Recommendation ROI = impact_numeric × effort_numeric × gap_numeric`
 
-- `impact_numeric` and `effort_numeric` use the **recommendation's own** `impact` and `effort` fields (not the source opportunity's). These may differ — an opportunity can be HIGH value but its recommendation LOW effort.
-- Same numeric mapping as Section 2: HIGH/Low=3, MEDIUM/Medium=2, LOW/High=1.
+- `impact_numeric`: from the recommendation's `impact` field. HIGH=3, MEDIUM=2, LOW=1.
+- `effort_numeric`: from the recommendation's `effort` field. Low effort=3 (easy → higher ROI), Medium effort=2, High effort=1 (hard → lower ROI). Same inversion as Section 2.
+- `gap_numeric`: from the adoption gap table above. Absent=3, Partial=2, Active=1.
 - Range 1–27. Rank descending. Ties broken by impact (higher wins).
 
 Recommendation #1 is the highest-ROI action. If the team reads nothing else, they read #1.
