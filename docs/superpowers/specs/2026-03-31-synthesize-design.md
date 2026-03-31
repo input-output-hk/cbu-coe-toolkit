@@ -119,7 +119,7 @@ Opportunities appearing in ≥2 repos. These are systemic patterns, not individu
 |------|-------|-------|
 | Risky Acceleration (Active + Undiscovered) | N | [repo](link), ... |
 | Ad-hoc AI Usage (no intentionality signals) | N | [repo](link), ... |
-| No .aiignore on high-assurance repo | N | [repo](link), ... |
+| No .aiignore (cc_aiignore_boundaries is approved opportunity) | N | [repo](link), ... |
 
 ## 5. Progress
 
@@ -166,11 +166,11 @@ This makes every claim verifiable with one click.
    - `adoption_state[]` — count Active/Partial/Absent
 5. **Aggregate**:
    - Quadrant distribution: count repos per quadrant
-   - Cross-portfolio patterns: group approved opportunities by `kb_pattern`, count repos, keep those with count ≥2
+   - Cross-portfolio patterns: group approved opportunities by `kb_pattern`, count repos, keep those with count ≥2. For novel opportunities (`kb_pattern: null`), group by normalized `title` to identify recurring non-KB patterns.
    - Risk flags: collect repos with non-empty `risky_acceleration` or `adhoc_usage: true`
    - .aiignore check: from opportunity data, find repos where `cc_aiignore_boundaries` is an approved opportunity (meaning .aiignore is absent)
 6. **Progress** (if previous portfolio-review.md exists):
-   - Find previous `portfolio-review.md` in an earlier date directory
+   - Find previous `portfolio-review.md`: list date directories in `scans/ai-augmentation/results/`, sort descending, take the first one before today that contains `portfolio-review.md`
    - Compare cohort: repos present in both current and previous
    - Compute deltas on: coverage, quadrant shifts, risk flag changes
 7. **Write portfolio-review.md** with all links
