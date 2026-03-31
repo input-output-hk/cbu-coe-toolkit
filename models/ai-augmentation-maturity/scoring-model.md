@@ -149,7 +149,7 @@ For each approved opportunity, assess readiness using **KB criteria only**.
 | ⬜ Undiscovered | <50% of criteria met |
 | 🟡 Exploring | 50-74% of criteria met |
 | 🟢 Practiced | ≥75% of criteria met |
-| 💎 Mastered | Agent cannot assign. Flag as candidate if 100% met + practices well-documented. CoE confirms. |
+| 💎 Mastered | Agent cannot assign. Flag as candidate if 100% met + practices well-documented. CoE confirms. In `assessment.json`, set level to `"Practiced"` and add the opportunity ID to the `mastered_nominations` array with a reason string. |
 
 **If KB has no readiness criteria for this use-case type:** Mark readiness as **Not Assessable**. Record reason: "No KB criteria for use-case type: {type}." The opportunity still appears in the report with Adoption State and in Recommendations. It is excluded from Quadrant computation.
 
@@ -177,7 +177,7 @@ From git history and file tree, identify modules/directories that are:
 
 | Dimension | HIGH | MEDIUM | LOW |
 |-----------|------|--------|-----|
-| **Detection difficulty** | No test directory for this path; no CI step targeting it | Test directory exists but no property tests (only unit tests or no `Arbitrary`/`Gen` files) | Property tests, formal verification, CDDL conformance tests, or conformance test modules exist for this path |
+| **Detection difficulty** | No references to this path found in any test directories (using the import-checking method from Step 1); no CI step targeting it | Test files reference this path but only with unit tests (no property tests — no `Arbitrary`/`Gen`/`QuickCheck`/`Hedgehog` imports in those test files) | Property tests, formal verification, CDDL conformance tests, or conformance test modules reference this path |
 | **Blast radius** | Path names match security-sensitive patterns (consensus, crypto, financial state, serialization); or path is imported by ≥5 other packages | API contracts, data migration, auth flows; or path is imported by 2–4 other packages | Presentation, documentation, non-critical utilities; or path has ≤1 downstream import |
 
 **Calibration rules:**
@@ -235,7 +235,11 @@ Recommendations ordered by **ROI descending**.
 | Partial | 2 |
 | Active | 1 |
 
-`Recommendation ROI = impact_numeric × effort_numeric × gap_numeric` — using the same value/effort mapping as opportunity ROI (Section 2). Range 1–27. Rank descending. Ties broken by impact (higher wins).
+`Recommendation ROI = impact_numeric × effort_numeric × gap_numeric`
+
+- `impact_numeric` and `effort_numeric` use the **recommendation's own** `impact` and `effort` fields (not the source opportunity's). These may differ — an opportunity can be HIGH value but its recommendation LOW effort.
+- Same numeric mapping as Section 2: HIGH/Low=3, MEDIUM/Medium=2, LOW/High=1.
+- Range 1–27. Rank descending. Ties broken by impact (higher wins).
 
 Recommendation #1 is the highest-ROI action. If the team reads nothing else, they read #1.
 
