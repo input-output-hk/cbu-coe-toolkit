@@ -1,0 +1,13 @@
+# Build artifacts
+node_modules/
+dist/
+.cache/
+
+# Large scan results (review individual scans on demand, not all at once)
+scans/ai-augmentation/results/
+
+# Git internals
+.git/
+
+# Notion sync (display layer, not source of truth)
+notion/

@@ -26,3 +26,6 @@ Thumbs.db
 # Local working docs (not part of model definitions)
 **/backlog.md
 PERSONAL_PLAN.md
+
+# Gemini review output (ephemeral by default)
+reviews/
