@@ -64,23 +64,30 @@ if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
   echo '```' >> "$PROMPT_FILE"
 fi
 
-# --- Health check (find available model) ---
+# --- Health check (find available model, with one retry) ---
 MODELS=("gemini-3-pro-preview" "gemini-3-pro" "gemini-2.5-pro")
 AVAILABLE_MODEL=""
 
 cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exit 0; }
 
-for MODEL in "${MODELS[@]}"; do
-  if echo "ok" | timeout 15 gemini -m "$MODEL" > /dev/null 2>&1; then
-    AVAILABLE_MODEL="$MODEL"
-    break
-  fi
-done
+find_model() {
+  for MODEL in "${MODELS[@]}"; do
+    if echo "ok" | timeout 15 gemini -m "$MODEL" > /dev/null 2>&1; then
+      AVAILABLE_MODEL="$MODEL"
+      return 0
+    fi
+  done
+  return 1
+}
 
-if [[ -z "$AVAILABLE_MODEL" ]]; then
-  echo "⚠ All Gemini models unavailable (tried: ${MODELS[*]}) — allowing commit."
-  rm -f "$PROMPT_FILE"
-  exit 0
+if ! find_model; then
+  echo "⚠ All models capacity-exhausted. Retrying in 60s..."
+  sleep 60
+  if ! find_model; then
+    echo "⚠ All Gemini models unavailable after retry (tried: ${MODELS[*]}) — allowing commit."
+    rm -f "$PROMPT_FILE"
+    exit 0
+  fi
 fi
 
 echo "   Model: $AVAILABLE_MODEL"
