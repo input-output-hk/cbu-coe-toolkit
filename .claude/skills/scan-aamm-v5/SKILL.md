@@ -39,10 +39,10 @@ fi
 ## Step 1: Load Context
 
 Read these files (agent context, not bash):
-1. `docs/superpowers/specs/2026-03-27-aamm-v5-spec.md` — v5 spec
-2. `kb/ecosystems/$ECOSYSTEM.md` — KB patterns for this ecosystem
-3. `kb/cross-cutting.md` — universal patterns
-4. `kb/anti-patterns.md` — what to watch for
+1. `models/ai-augmentation-maturity/scoring-model.md` — rubric criteria, scoring rules, confidence model, output format
+2. `models/ai-augmentation-maturity/knowledge-base/ecosystems/$ECOSYSTEM.md` — KB patterns for this ecosystem
+3. `models/ai-augmentation-maturity/knowledge-base/cross-cutting.md` — universal patterns
+4. `models/ai-augmentation-maturity/knowledge-base/anti-patterns.md` — what to watch for
 5. `scans/ai-augmentation/config.yaml` — scan config, overrides
 6. Previous results in `scans/ai-augmentation/results/` — for evolution
 
@@ -93,8 +93,8 @@ Then read key file contents via the Contents API (agent reads these, not bash):
 
 ## Step 3: Assess — Rubric + Depth
 
-Read `prompts/scanner-system.md` which contains all rubric tables, scoring rules,
-confidence model, and output format.
+Read `models/ai-augmentation-maturity/scoring-model.md` which contains all rubric tables,
+scoring rules, confidence model, and output format.
 
 Execute Phase 1 (rubric) then Phase 2 (depth) for each pillar and zone.
 Produce the assessment JSON and draft 5-7 recommendations.
@@ -176,7 +176,7 @@ mkdir -p "$RESULT_DIR"
 
 If new patterns or anti-patterns discovered, write proposed entries
 (status: proposed) to `scans/ai-augmentation/results/$DATE/kb-updates.md`.
-CoE lead reviews and merges into kb/ files.
+CoE lead reviews and merges into `models/ai-augmentation-maturity/knowledge-base/` files.
 
 ## Failure Handling
 
