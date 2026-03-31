@@ -4,16 +4,14 @@
 # Blocks commit if Gemini scores changes < 9.0.
 # Fail-open: if gemini is not installed or output is unparseable, warn and allow.
 #
+# Fallback chain:
+#   Level 1: Gemini CLI (OAuth, Google One AI Pro — free)
+#   Level 2: Gemini API ($GEMINI_API_KEY, $4/mo budget cap)
+#
 set -euo pipefail
 
 # --- Opt-out ---
 if [[ "${GEMINI_REVIEW:-}" == "0" ]]; then
-  exit 0
-fi
-
-# --- Check gemini CLI ---
-if ! command -v gemini &> /dev/null; then
-  echo "⚠ Gemini CLI not installed — skipping review. Install: npm install -g @google/gemini-cli"
   exit 0
 fi
 
@@ -56,7 +54,6 @@ done
 echo "## CONTEXT (background — do not review, use for reference only)" >> "$PROMPT_FILE"
 echo "" >> "$PROMPT_FILE"
 
-# Include CLAUDE.md as context
 if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
   echo "### CLAUDE.md" >> "$PROMPT_FILE"
   echo '```' >> "$PROMPT_FILE"
@@ -64,38 +61,94 @@ if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
   echo '```' >> "$PROMPT_FILE"
 fi
 
-# --- Health check (find available model, with one retry) ---
-MODELS=("gemini-3.1-pro" "gemini-2.5-pro")
-AVAILABLE_MODEL=""
-
 cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exit 0; }
 
-find_model() {
+OUTPUT_FILE=$(mktemp /tmp/gemini-output-XXXXXX.md)
+REVIEW_OK=false
+
+# --- Level 1: Gemini CLI ---
+if command -v gemini &> /dev/null; then
+  MODELS=("gemini-3.1-pro" "gemini-2.5-pro")
+
   for MODEL in "${MODELS[@]}"; do
     if echo "ok" | timeout 45 gemini -m "$MODEL" > /dev/null 2>&1; then
-      AVAILABLE_MODEL="$MODEL"
-      return 0
+      echo "   Model: $MODEL (CLI)"
+      if cat "$PROMPT_FILE" | timeout 300 gemini -m "$MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
+        if [[ -s "$OUTPUT_FILE" ]]; then
+          REVIEW_OK=true
+          break
+        fi
+      fi
     fi
   done
-  return 1
-}
 
-if ! find_model; then
-  echo "⚠ All models capacity-exhausted. Retrying in 60s..."
-  sleep 60
-  if ! find_model; then
-    echo "⚠ All Gemini models unavailable after retry (tried: ${MODELS[*]}) — allowing commit."
-    rm -f "$PROMPT_FILE"
-    exit 0
+  # Retry once after 60s if all CLI models failed
+  if [[ "$REVIEW_OK" != "true" ]]; then
+    echo "   CLI capacity exhausted. Retrying in 60s..."
+    sleep 60
+    for MODEL in "${MODELS[@]}"; do
+      if echo "ok" | timeout 45 gemini -m "$MODEL" > /dev/null 2>&1; then
+        echo "   Model: $MODEL (CLI retry)"
+        if cat "$PROMPT_FILE" | timeout 300 gemini -m "$MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
+          if [[ -s "$OUTPUT_FILE" ]]; then
+            REVIEW_OK=true
+            break
+          fi
+        fi
+      fi
+    done
   fi
 fi
 
-echo "   Model: $AVAILABLE_MODEL"
+# --- Level 2: Gemini API (fallback) ---
+if [[ "$REVIEW_OK" != "true" ]]; then
+  source ~/.zshrc 2>/dev/null || true
 
-# --- Invoke Gemini ---
-OUTPUT_FILE=$(mktemp /tmp/gemini-output-XXXXXX.md)
-if ! cat "$PROMPT_FILE" | timeout 120 gemini -m "$AVAILABLE_MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
-  echo "⚠ Gemini review timed out or failed — allowing commit."
+  if [[ -n "${GEMINI_API_KEY:-}" ]]; then
+    echo "   Falling back to Gemini API ($4/mo cap)..."
+
+    GEMINI_MD=""
+    [[ -f "$REPO_ROOT/GEMINI.md" ]] && GEMINI_MD=$(cat "$REPO_ROOT/GEMINI.md")
+    PROMPT_CONTENT=$(cat "$PROMPT_FILE")
+
+    python3 -c "
+import json, sys, urllib.request
+
+api_key = '${GEMINI_API_KEY}'
+system = json.loads(sys.stdin.readline())
+user = json.loads(sys.stdin.readline())
+
+body = json.dumps({
+    'system_instruction': {'parts': [{'text': system}]},
+    'contents': [{'parts': [{'text': user}]}]
+}).encode()
+
+req = urllib.request.Request(
+    f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={api_key}',
+    data=body,
+    headers={'Content-Type': 'application/json'},
+    method='POST'
+)
+
+try:
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        r = json.loads(resp.read())
+        if 'candidates' in r:
+            print(r['candidates'][0]['content']['parts'][0]['text'])
+        else:
+            print('API returned no candidates', file=sys.stderr)
+except Exception as e:
+    print(f'API error: {e}', file=sys.stderr)
+" <<< "$(echo "$GEMINI_MD" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+$(echo "$PROMPT_CONTENT" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')" > "$OUTPUT_FILE" 2>/dev/null
+
+    [[ -s "$OUTPUT_FILE" ]] && REVIEW_OK=true
+  fi
+fi
+
+# --- All levels failed ---
+if [[ "$REVIEW_OK" != "true" ]]; then
+  echo "⚠ All Gemini endpoints unavailable — allowing commit."
   rm -f "$PROMPT_FILE" "$OUTPUT_FILE"
   exit 0
 fi

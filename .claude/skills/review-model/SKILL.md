@@ -81,38 +81,76 @@ If you cannot verify a claim, say so explicitly.
 
 **MANDATORY health check before sending the real prompt.** Never send a large prompt without confirming the model responds first.
 
-Model fallback chain:
-1. `gemini-3.1-pro` (latest Pro)
-2. `gemini-2.5-pro` (fallback)
+Two-level fallback:
+1. **Gemini CLI** (OAuth, Google One AI Pro — free) → models: `gemini-3.1-pro`, `gemini-2.5-pro`
+2. **Gemini API** (API key, `$GEMINI_API_KEY`, $4/mo budget cap) → model: `gemini-2.5-pro`
 
-### Health check
+### Level 1: Gemini CLI
 
-For each model in the chain, run:
+For each CLI model, health check:
 ```bash
 echo "ok" | timeout 45 gemini -m <model> 2>/dev/null
 ```
 
-- If it responds within 45 seconds → model is available, use it
-- If it times out or errors (429 rate limit, model not found) → try next model
-- If ALL models fail → print "All Gemini models unavailable. Skipping review." and STOP (fail-open)
+- Responds within 45 seconds → use it
+- Timeout or 429 → try next CLI model
+- All CLI models fail → fall through to Level 2
 
-### Invoke
-
-Once a healthy model is found:
+Invoke (once healthy model found):
 ```bash
 cd <repo-root>
-cat /tmp/gemini-review-prompt.md | timeout 120 gemini -m "$MODEL" 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
+cat /tmp/gemini-review-prompt.md | timeout 300 gemini -m "$MODEL" 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
 ```
 
 Notes:
 - Run from repo root so GEMINI.md is auto-loaded by Gemini CLI
-- `timeout 120` prevents hanging on rate limits during the real call
-- Capture stderr separately for error detection
-- `tee` to both display and capture output
+- `timeout 300` — large prompts need time for generation
+- If output is empty after successful health check → CLI dropped connection mid-request, fall through to Level 2
 
-If gemini command fails or times out:
-- Print raw stderr, note which model was tried
-- STOP (fail-open) — do not retry after health check passed
+### Level 2: Gemini API (fallback)
+
+Used when ALL CLI models are capacity-exhausted. Requires `$GEMINI_API_KEY` env var (from `~/.zshrc`).
+
+Health check:
+```bash
+source ~/.zshrc 2>/dev/null
+curl -s -m 30 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=$GEMINI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"contents":[{"parts":[{"text":"Reply: ok"}]}]}' | head -c 200
+```
+
+Invoke:
+```bash
+source ~/.zshrc 2>/dev/null
+# Read GEMINI.md and prepend to prompt as system instruction
+GEMINI_MD=$(cat GEMINI.md)
+PROMPT=$(cat /tmp/gemini-review-prompt.md)
+
+# Build API request — system instruction from GEMINI.md, user content from prompt
+cat > /tmp/gemini-api-request.json << APIREQ
+{
+  "system_instruction": {"parts": [{"text": $(echo "$GEMINI_MD" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")}]},
+  "contents": [{"parts": [{"text": $(echo "$PROMPT" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")}]}]
+}
+APIREQ
+
+curl -s -m 300 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=$GEMINI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @/tmp/gemini-api-request.json | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+if 'candidates' in r:
+    print(r['candidates'][0]['content']['parts'][0]['text'])
+elif 'error' in r:
+    print(f'API ERROR: {r[\"error\"][\"message\"]}', file=sys.stderr)
+" | tee /tmp/gemini-review-output.md
+```
+
+Note: GEMINI.md is NOT auto-loaded via API — we include it as `system_instruction`.
+
+### If both levels fail
+
+Print "All Gemini endpoints unavailable. Skipping review." and STOP (fail-open).
 
 ## Step 5: Present Results
 
