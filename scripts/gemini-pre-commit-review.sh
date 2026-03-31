@@ -64,10 +64,22 @@ if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
   echo '```' >> "$PROMPT_FILE"
 fi
 
-# --- Invoke Gemini ---
+# --- Invoke Gemini (model fallback chain) ---
 OUTPUT_FILE=$(mktemp /tmp/gemini-output-XXXXXX.md)
-if ! cd "$REPO_ROOT" || ! cat "$PROMPT_FILE" | gemini -m gemini-2.5-pro > "$OUTPUT_FILE" 2>/dev/null; then
-  echo "⚠ Gemini review failed — allowing commit. Check 'gemini' auth and connectivity."
+MODELS=("gemini-3-pro-preview" "gemini-3-pro" "gemini-2.5-pro")
+GEMINI_OK=false
+
+cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exit 0; }
+
+for MODEL in "${MODELS[@]}"; do
+  if cat "$PROMPT_FILE" | gemini -m "$MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
+    GEMINI_OK=true
+    break
+  fi
+done
+
+if [[ "$GEMINI_OK" != "true" ]]; then
+  echo "⚠ Gemini review failed (tried: ${MODELS[*]}) — allowing commit. Check 'gemini' auth and connectivity."
   rm -f "$PROMPT_FILE" "$OUTPUT_FILE"
   exit 0
 fi

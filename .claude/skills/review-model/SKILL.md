@@ -1,6 +1,6 @@
 ---
 name: review-model
-description: Run a Gemini 3.1 Pro review on any file or directory — independent, skeptical, data-driven. Produces scored findings (HIGH/MEDIUM/LOW) with a target of ≥9.0 to pass.
+description: Run a Gemini Pro review on any file or directory — independent, skeptical, data-driven. Produces scored findings (HIGH/MEDIUM/LOW) with a target of ≥9.0 to pass.
 ---
 
 # Review Model
@@ -79,20 +79,27 @@ If you cannot verify a claim, say so explicitly.
 
 ## Step 4: Invoke Gemini
 
+Try models in order until one succeeds:
+
+1. `gemini-3-pro-preview` (latest Pro preview)
+2. `gemini-3-pro` (stable Pro)
+3. `gemini-2.5-pro` (fallback)
+
 ```bash
 cd <repo-root>
-cat /tmp/gemini-review-prompt.md | gemini -m gemini-2.5-pro 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
+MODEL="gemini-3-pro-preview"
+cat /tmp/gemini-review-prompt.md | gemini -m "$MODEL" 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
 ```
 
 Notes:
 - Run from repo root so GEMINI.md is auto-loaded by Gemini CLI
-- Use `gemini-2.5-pro` as default (widely available). Switch to `gemini-3.1-pro` when confirmed available.
 - Capture stderr separately for error detection
 - `tee` to both display and capture output
 
 If gemini command fails (non-zero exit):
+- Check stderr for model not found → try next model in chain
 - Check stderr for auth errors → print: "Run `gemini` once to authenticate"
-- Check stderr for model errors → fall back: retry with `gemini-2.5-pro`
+- Check stderr for rate limit (429) → wait 30s, retry same model once
 - Other errors → print raw stderr, STOP
 
 ## Step 5: Present Results
