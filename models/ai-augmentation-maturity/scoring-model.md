@@ -34,7 +34,7 @@ Collect all of the following before any assessment begins. Do not assess while c
 | File tree (full) | GitHub API: repo contents / git ls-tree | Needed for: module structure, test directories, config files, documentation density |
 | Key file contents | GitHub API: file contents | Read: README.md, CLAUDE.md, CONTRIBUTING.md, .aiignore, CI workflow files, package manifests, AI config files (.cursorrules, .mcp.json, AGENTS.md, copilot-instructions.md). If a file doesn't exist, record its absence — that's data too. |
 | Git history summary | GitHub API: commits (last 100) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency |
-| High-churn modules | Derived from git history | For each file changed in the last 100 commits, strip the filename and take the parent directory. Exclude root-level files (files with no parent directory — e.g., `README.md`, `flake.nix`). Count how many times each directory appears. Top 10 directories by count = active development areas. Example: `eras/conway/impl/src/Cardano/Ledger/Conway/Rules/Gov.hs` → increment `eras/conway/impl/src/Cardano/Ledger/Conway/Rules`. |
+| High-churn modules | Derived from git history | For each of the last 100 commits, collect the set of parent directories of changed files (deduplicated per commit). Exclude root-level files. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. This avoids distortion from bulk refactoring commits. Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`, not 50. |
 | PR data | GitHub API: PRs (last 30 merged) | Extract: review counts, CI check status, AI bot activity, PR descriptions |
 | CI configuration | Workflow YAML files | Extract: test steps, linter steps, security scanning, AI tools in CI |
 | Ecosystem detection | Package manifests + file extensions | Primary ecosystem determines which KB patterns to load |
@@ -84,6 +84,8 @@ Produce opportunities ordered by **ROI descending**.
 | High effort | 1 (hard = low ROI) |
 
 `ROI = value_numeric × effort_numeric` — range 1–9. Rank by ROI descending. Ties broken by value (higher value wins).
+
+**Confidence note:** Value and effort are subjective estimates (LOW confidence ceiling per Section 5). ROI ordering is a heuristic to prioritize review, not a definitive ranking. State this in the report: "ROI ordering is a heuristic based on estimated value and effort — treat as suggested priority, not certainty."
 
 Each opportunity must have ALL of these fields (schema: `$defs.opportunity` in `schema/assessment-v6.schema.json`):
 ```
@@ -163,7 +165,7 @@ Map AI risk to **concrete code paths**, not the repo as a whole.
 From git history and file tree, identify modules/directories that are:
 - Security-sensitive: directory or file names containing `crypto`, `auth`, `consensus`, `signing`, `keys`, `Rules`, `protocol`, or identified as security-critical in CLAUDE.md/.aiignore
 - High-complexity: directories with ≥5 cross-imports from other packages (infer from file tree + package manifests), or directories that appear in ≥3 high-churn modules
-- Low-test-coverage: source directories where no test files reference or exercise code in this path. Detection: search all test directories in the repo (`test/`, `tests/`, `testlib/`, `__tests__/`, `spec/`) for imports or references to modules in this path. If none found → low coverage. If test files exist but only cover a subset → note partial coverage.
+- Low-test-coverage: source directories where no test files reference or exercise code in this path. Detection: search all test directories in the repo (`test/`, `tests/`, `testlib/`, `__tests__/`, `spec/`) for imports or references to modules in this path. If none found → low coverage. If test files exist but only cover a subset → note partial coverage. **Limitation:** This heuristic may produce false negatives for code tested indirectly (through a higher-level API) or via dynamic imports. Flag as MEDIUM confidence when no direct references are found but the module has high fan-in (imported by many other tested modules).
 
 **Step 2 — Check AI exposure per path:**
 
