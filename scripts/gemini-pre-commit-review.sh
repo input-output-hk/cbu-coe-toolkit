@@ -65,7 +65,7 @@ if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
 fi
 
 # --- Health check (find available model, with one retry) ---
-MODELS=("gemini-3-pro-preview" "gemini-3-pro" "gemini-2.5-pro")
+MODELS=("gemini-3.1-pro" "gemini-2.5-pro")
 AVAILABLE_MODEL=""
 
 cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exit 0; }

@@ -82,9 +82,8 @@ If you cannot verify a claim, say so explicitly.
 **MANDATORY health check before sending the real prompt.** Never send a large prompt without confirming the model responds first.
 
 Model fallback chain:
-1. `gemini-3-pro-preview` (latest Pro preview)
-2. `gemini-3-pro` (stable Pro)
-3. `gemini-2.5-pro` (fallback)
+1. `gemini-3.1-pro` (latest Pro)
+2. `gemini-2.5-pro` (fallback)
 
 ### Health check
 
