@@ -4,6 +4,36 @@ Operational insights discovered during work on this repo. Newest first. Contribu
 
 ---
 
+### 2026-03-31 — Session 12: First v6 scoring scans, Gemini reviewer, synthesize, scoring-model hardening
+
+- **Multi-model review catches different things than single-model.** Gemini 2.5 Pro reviewing scoring-model.md found issues Claude missed: undefined ROI formula, risk assessment requiring data the agent can't collect, ambiguous churn definition. After 7 rounds, scoring-model improved significantly. Multi-model review is worth the setup cost.
+
+- **Don't blindly comply with reviewer findings.** Gemini round 5 said "count unique commits not files" for churn. Round 8 said "unique commits ignores volume" — exact opposite. Oscillation, not improvement. Evaluate each finding: real bug → fix. Design tradeoff → contest with reasoning. Previous round contradicted → stop changing.
+
+- **Gemini CLI gets MODEL_CAPACITY_EXHAUSTED independent of user fault.** Google's cloudcode-pa.googleapis.com returns "No capacity available" during high traffic. Not per-user rate limiting — server-side capacity. Fix: health check (45s timeout) before real invocations + Gemini API ($GEMINI_API_KEY) as Level 2 fallback. Two separate capacity pools.
+
+- **Subagent permission pattern: main collects, subagent analyzes.** Background subagents cannot get Bash permissions interactively. Solution: main session does all API calls, writes data to /tmp, dispatches subagents that only read local files + write output. Works reliably for parallel scans.
+
+- **Portfolio review must be CoE+Leadership only, not team-facing.** Gemini's end-user review flagged that cross-repo comparisons turn consultations into competitive scorecards. Reframed synthesize output as internal portfolio-review.md with systemic patterns, not team rankings.
+
+- **Stage A adversarial caught fabricated evidence.** cardano-node scan: primary agent cited trace-dispatcher/ as high-churn. Stage A verified against tree.json — directory doesn't exist. 2 opportunities rejected. Churn from commit diffs ≠ current file tree.
+
+### 2026-03-30 — Session 11: AAMM v6 spec, scoring-model, KB seed, first learning scans
+
+- **Adversarial review on your own spec surfaces design flaws before implementation.** 3 rounds of aggressive review on spec.md found: overengineered human gates (2 gates with 3 rounds each for 1 person operating 29 repos), Team Capability component that judged teams while claiming not to, Governance component that measured mechanisms not outcomes (violating ADR-011), missing failure modes, undefined adversarial context. Fixing at spec level cost hours; fixing at implementation level would cost days.
+
+- **Subagents in background cannot get interactive bash permissions.** When launching Agent tool with `run_in_background: true`, the subagent can't prompt the user for tool approval. First batch of 5 learning scan agents all failed — they needed bash for API calls but couldn't get approval. Fix: collect all data in main context first (one batch script, 30 seconds for 28 repos), then launch subagents that only read /tmp and write output files. Pattern: **main context collects, subagents analyze.**
+
+- **GitHub Contents API: use raw accept header, not base64 decode.** `Accept: application/vnd.github.raw+json` returns file contents directly. Base64 decode via `jq -r '.content' | base64 -d` produces garbled output on some systems. Always use the raw header.
+
+- **One batch script > 5 parallel agents for data collection.** A single bash script collecting metadata + tree + commits for 28 repos finished in 30 seconds. 5 parallel agents each trying to do the same work failed entirely due to permission issues. For deterministic, well-defined operations (API calls with known endpoints), batch scripts beat agent parallelism.
+
+- **KB seed format validated on first real scan.** The `applies_when` + `evidence_to_look_for` + `readiness_criteria` structure from spec.md worked in practice on cardano-ledger. All 5 seed patterns matched with real evidence. 4 new patterns proposed from observations the seeds didn't cover (Agda conformance, Imp tests, constrained generators, era transition docs). The format is practical, not just theoretical.
+
+- **Learning scan before scoring scan is genuinely necessary.** cardano-ledger learning scan found that 4 of 9 Haskell KB patterns only exist because of this repo's specific architecture (STS framework, constrained-generators, Agda formal spec, Imp tests). Without the learning scan, the KB would lack the most valuable patterns for the portfolio's primary ecosystem.
+
+- **Read-only rule must be stated 3 times.** AAMM's read-only constraint on target repos was not in the original spec, scoring-model, or skill. Added after explicit reminder. For non-negotiable rules: state in spec (design intent), scoring-model (agent instruction), and skill (operational guard). If it's only in one place, it will be missed.
+
 ### 2026-03-27 — Session 10: AAMM v5 complete redesign — single AI agent replaces bash pipeline
 
 - **Working backwards from the problem is more productive than forward-iterating on signals.** 9 sessions of pipeline refinement produced precise numbers but superficial recommendations. Starting with "what problem does AAMM solve?" and working backwards produced a fundamentally better model in one session: awareness gap, where to start, feedback loop, guardrails.
