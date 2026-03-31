@@ -90,10 +90,10 @@ Model fallback chain:
 
 For each model in the chain, run:
 ```bash
-echo "ok" | timeout 15 gemini -m <model> 2>/dev/null
+echo "ok" | timeout 45 gemini -m <model> 2>/dev/null
 ```
 
-- If it responds within 15 seconds → model is available, use it
+- If it responds within 45 seconds → model is available, use it
 - If it times out or errors (429 rate limit, model not found) → try next model
 - If ALL models fail → print "All Gemini models unavailable. Skipping review." and STOP (fail-open)
 

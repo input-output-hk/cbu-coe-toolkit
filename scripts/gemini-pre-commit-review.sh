@@ -72,7 +72,7 @@ cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exi
 
 find_model() {
   for MODEL in "${MODELS[@]}"; do
-    if echo "ok" | timeout 15 gemini -m "$MODEL" > /dev/null 2>&1; then
+    if echo "ok" | timeout 45 gemini -m "$MODEL" > /dev/null 2>&1; then
       AVAILABLE_MODEL="$MODEL"
       return 0
     fi
