@@ -64,22 +64,31 @@ if [[ -f "$REPO_ROOT/CLAUDE.md" ]]; then
   echo '```' >> "$PROMPT_FILE"
 fi
 
-# --- Invoke Gemini (model fallback chain) ---
-OUTPUT_FILE=$(mktemp /tmp/gemini-output-XXXXXX.md)
+# --- Health check (find available model) ---
 MODELS=("gemini-3-pro-preview" "gemini-3-pro" "gemini-2.5-pro")
-GEMINI_OK=false
+AVAILABLE_MODEL=""
 
 cd "$REPO_ROOT" || { echo "⚠ Cannot cd to repo root — allowing commit."; exit 0; }
 
 for MODEL in "${MODELS[@]}"; do
-  if cat "$PROMPT_FILE" | gemini -m "$MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
-    GEMINI_OK=true
+  if echo "ok" | timeout 15 gemini -m "$MODEL" > /dev/null 2>&1; then
+    AVAILABLE_MODEL="$MODEL"
     break
   fi
 done
 
-if [[ "$GEMINI_OK" != "true" ]]; then
-  echo "⚠ Gemini review failed (tried: ${MODELS[*]}) — allowing commit. Check 'gemini' auth and connectivity."
+if [[ -z "$AVAILABLE_MODEL" ]]; then
+  echo "⚠ All Gemini models unavailable (tried: ${MODELS[*]}) — allowing commit."
+  rm -f "$PROMPT_FILE"
+  exit 0
+fi
+
+echo "   Model: $AVAILABLE_MODEL"
+
+# --- Invoke Gemini ---
+OUTPUT_FILE=$(mktemp /tmp/gemini-output-XXXXXX.md)
+if ! cat "$PROMPT_FILE" | timeout 120 gemini -m "$AVAILABLE_MODEL" > "$OUTPUT_FILE" 2>/dev/null; then
+  echo "⚠ Gemini review timed out or failed — allowing commit."
   rm -f "$PROMPT_FILE" "$OUTPUT_FILE"
   exit 0
 fi

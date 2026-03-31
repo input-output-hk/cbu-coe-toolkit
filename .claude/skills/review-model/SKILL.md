@@ -77,30 +77,43 @@ If you cannot verify a claim, say so explicitly.
 <context file content 2>
 ```
 
-## Step 4: Invoke Gemini
+## Step 4: Health Check + Invoke Gemini
 
-Try models in order until one succeeds:
+**MANDATORY health check before sending the real prompt.** Never send a large prompt without confirming the model responds first.
 
+Model fallback chain:
 1. `gemini-3-pro-preview` (latest Pro preview)
 2. `gemini-3-pro` (stable Pro)
 3. `gemini-2.5-pro` (fallback)
 
+### Health check
+
+For each model in the chain, run:
+```bash
+echo "ok" | timeout 15 gemini -m <model> 2>/dev/null
+```
+
+- If it responds within 15 seconds → model is available, use it
+- If it times out or errors (429 rate limit, model not found) → try next model
+- If ALL models fail → print "All Gemini models unavailable. Skipping review." and STOP (fail-open)
+
+### Invoke
+
+Once a healthy model is found:
 ```bash
 cd <repo-root>
-MODEL="gemini-3-pro-preview"
-cat /tmp/gemini-review-prompt.md | gemini -m "$MODEL" 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
+cat /tmp/gemini-review-prompt.md | timeout 120 gemini -m "$MODEL" 2>/tmp/gemini-review-stderr.txt | tee /tmp/gemini-review-output.md
 ```
 
 Notes:
 - Run from repo root so GEMINI.md is auto-loaded by Gemini CLI
+- `timeout 120` prevents hanging on rate limits during the real call
 - Capture stderr separately for error detection
 - `tee` to both display and capture output
 
-If gemini command fails (non-zero exit):
-- Check stderr for model not found → try next model in chain
-- Check stderr for auth errors → print: "Run `gemini` once to authenticate"
-- Check stderr for rate limit (429) → wait 30s, retry same model once
-- Other errors → print raw stderr, STOP
+If gemini command fails or times out:
+- Print raw stderr, note which model was tried
+- STOP (fail-open) — do not retry after health check passed
 
 ## Step 5: Present Results
 
