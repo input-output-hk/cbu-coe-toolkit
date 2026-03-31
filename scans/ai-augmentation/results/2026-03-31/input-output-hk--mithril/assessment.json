@@ -1,0 +1,440 @@
+{
+  "schema_version": "6.0",
+  "scan_type": "scoring",
+  "scan_date": "2026-03-31",
+  "agent_model": "claude-opus-4-6[1m]",
+  "repo": {
+    "owner": "input-output-hk",
+    "name": "mithril",
+    "ecosystem": "rust",
+    "project": "mithril"
+  },
+  "opportunity_map": [
+    {
+      "id": "opp-mithril-rs_unsafe_audit",
+      "title": "AI-assisted review of unsafe blocks in mithril-stm cryptographic multi-signature implementation",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 1,
+      "evidence": "mithril-stm/ is the core STM crypto library implementing stake-based threshold multi-signatures. Active SNARK prover work: PR #3105 (deploy SNARK prover in dev networks, merged 2026-03-31), PR #3103 (wire SNARK proof in aggregate signature, merged 2026-03-30). Commit 994a4b9 references 'SNARK AVK' in protocol message creation. Cryptographic crates in Rust commonly use unsafe blocks for performance. deny.toml exists (743 bytes) confirming security awareness.",
+      "kb_pattern": "rs_unsafe_audit",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Targets specific crate (mithril-stm) with active crypto development. Cannot confirm unsafe block count from tree alone (MEDIUM confidence) but crate purpose and SNARK work strongly suggest unsafe usage."
+    },
+    {
+      "id": "opp-mithril-cc_aiignore_boundaries",
+      "title": "Create .aiignore trust boundaries for mithril-stm and SNARK prover paths",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 2,
+      "evidence": ".aiignore ABSENT (confirmed in repo-data-summary). .github/copilot-instructions.md EXISTS (7091 bytes) confirming AI tools are configured. Security-critical paths: mithril-stm/ (cryptographic primitives), mithril-signer/ (signing operations). No explicit trust boundaries prevent AI from modifying crypto code.",
+      "kb_pattern": "cc_aiignore_boundaries",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific paths identified (mithril-stm, mithril-signer). AI config present (copilot-instructions.md) without trust boundaries is a concrete gap."
+    },
+    {
+      "id": "opp-mithril-rs_debug_async",
+      "title": "AI-assisted debugging of async concurrency in mithril-aggregator and mithril-signer network services",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 3,
+      "evidence": "mithril-aggregator/ and mithril-signer/ are network services handling multi-party signature aggregation and signing. Version bumps in commit a33d505 (mithril-aggregator 0.8.38->0.8.39, mithril-signer 0.3.25->0.3.26). As network services processing concurrent signer registrations and signature aggregation, these services almost certainly use tokio async runtime (MEDIUM confidence -- inferred from architecture, not confirmed via Cargo.toml inspection).",
+      "kb_pattern": "rs_debug_async",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific services named. Async runtime inferred from network service architecture. Active development confirmed via recent version bumps."
+    },
+    {
+      "id": "opp-mithril-cc_claude_md_context",
+      "title": "Write substantive CLAUDE.md covering mithril's 25+ crate workspace architecture, STM protocol boundaries, and security-critical signing paths",
+      "value": "HIGH",
+      "effort": "Medium",
+      "roi_rank": 4,
+      "evidence": "CLAUDE.md is 14 bytes (placeholder/404 -- confirmed in repo-data-summary). Cargo workspace has 25+ members spanning demo, examples, internal, and top-level service crates (confirmed in repo-data-summary). .github/copilot-instructions.md exists (7091 bytes) showing AI tool investment, but CLAUDE.md is empty. Complex domain (stake-based threshold multi-signatures with SNARK proofs) requires project context for effective AI interaction.",
+      "kb_pattern": "cc_claude_md_context",
+      "seen_in": [
+        {
+          "repo": "input-output-hk/lace-platform",
+          "outcome": "comprehensive CLAUDE.md covering architecture, conventions, testing -- measurably better AI interactions"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Effort adjusted from Low to Medium by Stage A due to 25+ crate complexity. copilot-instructions.md presence shows AI tool investment; empty CLAUDE.md is a specific gap with evidence."
+    },
+    {
+      "id": "opp-mithril-rs_cargo_deny_audit",
+      "title": "Audit cargo-deny configuration in deny.toml for advisory scanning completeness",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 5,
+      "evidence": "deny.toml EXISTS at repo root (743 bytes, confirmed in tree.json sha ca955199776b22378ceefcd955753b009a4e0847). Cannot confirm whether 'cargo deny check advisories' runs in CI vs only 'cargo deny check licenses' without reading CI workflow contents. KB pattern seen_in includes this repo from previous observation.",
+      "kb_pattern": "rs_cargo_deny_audit",
+      "seen_in": [
+        {
+          "repo": "input-output-hk/mithril",
+          "outcome": "cargo deny check licenses found but cargo deny check advisories was the actual security check"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "deny.toml confirmed present. KB pattern directly references this repo. Cannot verify CI command from collected data but the audit itself is the value."
+    },
+    {
+      "id": "opp-mithril-rs_rustdoc_generation",
+      "title": "AI-generated rustdoc for underdocumented internal/ crates (mithril-era, mithril-persistence, mithril-metric, mithril-dmq)",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 6,
+      "evidence": "internal/ directory contains 18+ crates (confirmed in workspace members: mithril-era, mithril-persistence, mithril-metric, mithril-dmq, mithril-resource-pool, mithril-ticker, etc.). These are infrastructure crates depended upon by service crates. Commit 4ac1a10 renames era reader adapter in mithril-era, confirming active development. Internal crates typically have sparser documentation than public-facing crates.",
+      "kb_pattern": "rs_rustdoc_generation",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific internal crates named. Active development confirmed (mithril-era commit). Documentation sparseness inferred (MEDIUM confidence)."
+    },
+    {
+      "id": "opp-mithril-rs_trait_test_gen",
+      "title": "AI-generated property tests for trait implementations across mithril-common and mithril-stm",
+      "value": "MEDIUM",
+      "effort": "Medium",
+      "roi_rank": 7,
+      "evidence": "mithril-common is a shared library depended upon by most workspace crates (high fan-in -- listed as dependency path in 25+ workspace members). mithril-stm implements cryptographic trait contracts for multi-signature operations. Trait correctness across types is critical for protocol security. Cannot confirm proptest/quickcheck presence from collected data (MEDIUM confidence).",
+      "kb_pattern": "rs_trait_test_gen",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific crates named with rationale. Fan-in inferred from workspace structure. Property test framework presence unconfirmed."
+    },
+    {
+      "id": "opp-mithril-cc_pr_descriptions-REJECTED",
+      "title": "AI-assisted PR description generation for mithril's active PR workflow",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 99,
+      "evidence": "PR template exists at .github/pull_request_template.md (985 bytes). Sampled PRs (#3105, #3103) have structured descriptions with Content sections, Pre-submit checklists, and Issue references.",
+      "kb_pattern": "cc_pr_descriptions",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "PRs #3105 and #3103 already have structured descriptions with content sections, checklists, and issue references. PR template exists. The team is already doing this well -- the opportunity addresses a problem that does not exist here."
+    }
+  ],
+  "adoption_state": [
+    {
+      "opportunity_id": "opp-mithril-rs_unsafe_audit",
+      "state": "Absent",
+      "evidence": "Zero AI co-authored-by trailers in commit history. No AI-attributed commits touching mithril-stm/. copilot-instructions.md exists but no evidence of AI being used for unsafe code review specifically. No observable AI attribution found. This does not confirm absence of AI use -- attribution is not universally enforced."
+    },
+    {
+      "opportunity_id": "opp-mithril-cc_aiignore_boundaries",
+      "state": "Absent",
+      "evidence": ".aiignore does not exist. copilot-instructions.md exists (7091 bytes) but addresses coding guidance, not trust boundaries. No observable signal of trust boundary configuration. This does not confirm absence of trust boundary practices outside the repo."
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_debug_async",
+      "state": "Absent",
+      "evidence": "Zero AI co-authored-by trailers. No AI-attributed commits touching mithril-aggregator/ or mithril-signer/. No observable AI attribution found. This does not confirm absence of AI use -- attribution is not universally enforced."
+    },
+    {
+      "opportunity_id": "opp-mithril-cc_claude_md_context",
+      "state": "Absent",
+      "evidence": "CLAUDE.md is 14 bytes (placeholder returning 404). No substantive AI project context file. copilot-instructions.md exists (7091 bytes) which is a partial signal but not CLAUDE.md. Per anti-pattern ap_generic_claude_md: a placeholder/empty CLAUDE.md scores the same as no CLAUDE.md for Adoption State."
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_cargo_deny_audit",
+      "state": "Absent",
+      "evidence": "deny.toml exists but no evidence of AI being used to audit or maintain it. Zero AI-attributed commits. No observable AI attribution found."
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_rustdoc_generation",
+      "state": "Absent",
+      "evidence": "Zero AI co-authored-by trailers. No AI-attributed commits touching internal/ crates documentation. No observable AI attribution found."
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_trait_test_gen",
+      "state": "Absent",
+      "evidence": "Zero AI co-authored-by trailers. No AI-attributed commits touching test files. No observable AI attribution found."
+    }
+  ],
+  "readiness": [
+    {
+      "opportunity_id": "opp-mithril-rs_unsafe_audit",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "Clippy configured including unsafe lints",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "CI workflow ci.yml (45048 bytes) exists. Clippy is standard Rust CI tooling and a 45KB CI file strongly suggests comprehensive linting. Cannot confirm specific clippy::pedantic/restriction lints without reading CI file contents."
+        },
+        {
+          "criterion": "Miri or similar UB detection in CI",
+          "result": "NO",
+          "confidence": "MEDIUM",
+          "evidence": "No evidence of cargo miri in workflow file names. CI workflows listed: ci.yml, backward-compatibility.yml, aggregator-stress-test.yml, test-client.yml, test-deploy-network.yml. None suggest miri. MEDIUM confidence -- could be embedded in ci.yml."
+        },
+        {
+          "criterion": "Safety comments convention established",
+          "result": "NO",
+          "confidence": "LOW",
+          "evidence": "Cannot verify presence of // SAFETY: comments without reading source files. LOW confidence -- subjective assessment that a well-maintained crypto crate may have this convention."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-cc_aiignore_boundaries",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "Security-critical paths identifiable in file tree",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "mithril-stm/ (cryptographic multi-signatures), mithril-signer/ (signing operations) clearly identifiable in file tree. Repo description: 'Stake-based threshold multi-signatures protocol'."
+        },
+        {
+          "criterion": "AI tools in active use",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": ".github/copilot-instructions.md exists (7091 bytes). This is a substantive AI config file (not a placeholder). Confirms AI tools are configured for the repo."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_debug_async",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "Async runtime is explicit (not hidden behind framework)",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "mithril-aggregator and mithril-signer are network services handling concurrent operations. Tokio is the standard async runtime for Rust network services. MEDIUM confidence -- inferred from architecture, not confirmed via Cargo.toml."
+        },
+        {
+          "criterion": "Tracing or logging configured for async tasks",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "ADR-002 in docs/website/adr/002-use-structured-logging.md confirms structured logging is an architectural decision. ADR-007 (standardize-log-output) further confirms logging standards. MEDIUM confidence -- ADR exists but cannot confirm tracing crate specifically."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-cc_claude_md_context",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "AI tool in use or planned",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": ".github/copilot-instructions.md exists (7091 bytes). AI tool configuration is present and substantive."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_cargo_deny_audit",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "cargo-deny configured",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "deny.toml exists at repo root (743 bytes, confirmed in tree.json)."
+        },
+        {
+          "criterion": "Advisory check runs in CI",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "deny.toml exists and CI is comprehensive (45KB ci.yml). KB pattern seen_in for this repo notes 'cargo deny check' was found. MEDIUM confidence -- cannot read ci.yml contents to confirm exact command."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_rustdoc_generation",
+      "level": "Undiscovered",
+      "criteria_results": [
+        {
+          "criterion": "rustdoc builds without warnings",
+          "result": "NO",
+          "confidence": "MEDIUM",
+          "evidence": "No evidence of cargo doc or rustdoc in CI workflow names. Cannot confirm without reading ci.yml contents."
+        },
+        {
+          "criterion": "Crate-level documentation exists",
+          "result": "NO",
+          "confidence": "LOW",
+          "evidence": "Cannot verify lib.rs documentation for internal crates without reading source files. Internal infrastructure crates typically have sparser docs. LOW confidence."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-mithril-rs_trait_test_gen",
+      "level": "Undiscovered",
+      "criteria_results": [
+        {
+          "criterion": "Property-based testing framework available",
+          "result": "NO",
+          "confidence": "MEDIUM",
+          "evidence": "Cannot confirm proptest or quickcheck in Cargo.toml dev-dependencies without reading file. No evidence in tree file names. MEDIUM confidence."
+        },
+        {
+          "criterion": "Trait definitions exist with documented contracts",
+          "result": "NO",
+          "confidence": "LOW",
+          "evidence": "Cannot verify trait documentation without reading source files. LOW confidence -- subjective."
+        },
+        {
+          "criterion": "CI runs tests including property tests",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "CI workflow ci.yml (45KB) and multiple test workflows (test-client.yml, aggregator-stress-test.yml, backward-compatibility.yml) confirm comprehensive testing. cargo test in CI likely runs all test targets."
+        }
+      ],
+      "risky_acceleration_flag": false
+    }
+  ],
+  "risk_surface": [
+    {
+      "path": "mithril-stm/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Cryptographic multi-signature implementation. Core protocol security. Imported by mithril-common, mithril-aggregator, mithril-signer (HIGH fan-out). Active SNARK prover work (PR #3103, #3105). copilot-instructions.md exists but no AI-attributed commits in this path. MEDIUM detection difficulty: test infrastructure exists (mithril-test-lab/, backward-compatibility.yml) but cannot confirm property tests specifically for STM.",
+      "intersecting_opportunities": ["opp-mithril-rs_unsafe_audit", "opp-mithril-rs_trait_test_gen"]
+    },
+    {
+      "path": "mithril-signer/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Signing service handling stake-based multi-signature operations. Security-critical: processes signing keys and produces protocol signatures. copilot-instructions.md exists but no AI-attributed commits. MEDIUM detection: test workflows exist but cannot confirm coverage depth.",
+      "intersecting_opportunities": ["opp-mithril-cc_aiignore_boundaries", "opp-mithril-rs_debug_async"]
+    },
+    {
+      "path": "mithril-aggregator/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Aggregator service combining individual signatures into multi-signature certificates. Validates signer registrations and produces certificates. API-facing (aggregator-stress-test.yml exists). copilot-instructions.md exists but no AI-attributed commits.",
+      "intersecting_opportunities": ["opp-mithril-rs_debug_async"]
+    },
+    {
+      "path": "mithril-common/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Shared library depended upon by most workspace crates. Contains protocol types, cryptographic abstractions, and serialization logic. Changes here propagate across the entire system. copilot-instructions.md exists but no AI-attributed commits.",
+      "intersecting_opportunities": ["opp-mithril-rs_trait_test_gen", "opp-mithril-rs_rustdoc_generation"]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-mithril-aiignore",
+      "title": "Create .aiignore listing mithril-stm/, mithril-signer/src/signing, and SNARK prover paths as AI-excluded zones",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-mithril-cc_aiignore_boundaries",
+      "measurable_outcome": ".aiignore exists at repo root containing at minimum: mithril-stm/, mithril-signer/ paths. Verifiable by checking file existence and content.",
+      "recommended_learning": "Create .aiignore listing security-critical paths: mithril-stm/ (cryptographic primitives), mithril-signer/ (signing operations), any SNARK prover paths. Same syntax as .gitignore. Review with the team lead who maintains mithril-stm to confirm which paths are critical. copilot-instructions.md already exists -- .aiignore complements it with explicit exclusion boundaries.",
+      "kb_ref": "cc_aiignore_boundaries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Concrete, low-effort, high-impact. Measurable outcome is file existence check. Specific to this repo's crypto paths."
+    },
+    {
+      "id": "rec-mithril-unsafe-review",
+      "title": "Run AI-assisted unsafe code audit on mithril-stm src/ focusing on SNARK-related unsafe blocks",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-mithril-rs_unsafe_audit",
+      "measurable_outcome": "Audit report exists documenting each unsafe block in mithril-stm/src/ with: (a) safety invariant documented via // SAFETY: comment, (b) assessment of whether safe alternative exists. Verifiable by grep for '// SAFETY:' in mithril-stm/src/.",
+      "recommended_learning": "For each unsafe block in mithril-stm without a // SAFETY: comment: give Claude the unsafe block + surrounding context. Ask: 'What safety invariants must hold for this to be sound?' and 'Is there a safe alternative using standard library APIs?' Validate with Miri where possible. The SNARK prover integration (PR #3103) is a good starting point as it's fresh code.",
+      "kb_ref": "rs_unsafe_audit",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Actionable, specific to mithril-stm SNARK work. Measurable via SAFETY comment grep."
+    },
+    {
+      "id": "rec-mithril-claude-md",
+      "title": "Write CLAUDE.md covering workspace architecture, crate boundaries, STM protocol invariants, and security-critical paths",
+      "type": "start_now",
+      "effort": "Medium",
+      "impact": "HIGH",
+      "opportunity_id": "opp-mithril-cc_claude_md_context",
+      "measurable_outcome": "CLAUDE.md exists at repo root with >500 words covering: (1) workspace crate map with dependency direction, (2) security-critical paths (mithril-stm, mithril-signer), (3) build commands, (4) testing strategy, (5) coding conventions. Verifiable by file existence and word count.",
+      "recommended_learning": "Leverage copilot-instructions.md (7091 bytes already written) as a starting point. CLAUDE.md should cover 6 categories: architecture/module boundaries (25+ crate workspace), coding conventions, testing strategy, security-critical paths (mithril-stm, SNARK prover), build commands (Makefile exists), delivery workflow. The team at lace-platform found comprehensive CLAUDE.md measurably improved AI interactions.",
+      "kb_ref": "cc_claude_md_context",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Builds on existing copilot-instructions.md investment. Measurable outcome with word count and section checks. References lace-platform precedent."
+    },
+    {
+      "id": "rec-mithril-deny-audit",
+      "title": "AI-audit deny.toml to confirm advisory scanning runs (not just license checking) and review allow-listed advisories",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-mithril-rs_cargo_deny_audit",
+      "measurable_outcome": "deny.toml reviewed and confirmed to include advisories check. CI workflow confirmed to run 'cargo deny check advisories' or equivalent. Any stale allow-listed advisories flagged. Verifiable by reading deny.toml and CI config.",
+      "recommended_learning": "Review deny.toml with AI: (1) Is 'check advisories' running, not just 'check licenses'? (2) Are there allow-listed advisories that should be revisited? (3) Is deny.toml aligned with the project's security requirements as a cryptographic protocol? KB notes this repo previously had a gap between license and advisory checking.",
+      "kb_ref": "rs_cargo_deny_audit",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Directly actionable. KB has prior evidence for this exact repo. Low effort, clear outcome."
+    },
+    {
+      "id": "rec-mithril-async-debug",
+      "title": "Document async task topology in mithril-aggregator and mithril-signer for AI-assisted concurrency debugging",
+      "type": "foundation_first",
+      "effort": "Medium",
+      "impact": "HIGH",
+      "opportunity_id": "opp-mithril-rs_debug_async",
+      "measurable_outcome": "Documentation exists (in CLAUDE.md or dedicated doc) listing: (a) spawned tasks in mithril-aggregator and mithril-signer, (b) shared state (Arc<Mutex<_>>, channels) between tasks, (c) known contention points. Verifiable by searching for task topology documentation.",
+      "recommended_learning": "Before using AI for async debugging, document the task topology: which tasks are spawned, what state they share, what channels connect them. This is the foundation AI needs to trace concurrency issues. Give Claude the task spawning code + shared state definitions. Ask about lock acquisition order and cancellation safety. Validate with tokio-console or tracing output.",
+      "kb_ref": "rs_debug_async",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Foundation-first is correct framing -- async debugging needs documented topology. Measurable outcome is documentation existence."
+    },
+    {
+      "id": "rec-mithril-rustdoc",
+      "title": "AI-draft rustdoc for public items in internal/mithril-era, internal/mithril-persistence, and internal/mithril-dmq",
+      "type": "foundation_first",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-mithril-rs_rustdoc_generation",
+      "measurable_outcome": "lib.rs in mithril-era, mithril-persistence, and mithril-dmq each have //! module-level doc comments with >50 words. Public functions have /// doc comments. Verifiable by running cargo doc --no-deps and checking for warnings.",
+      "recommended_learning": "Pick a public module in internal/mithril-era (actively developed -- commit 4ac1a10 renamed era reader adapter). Give Claude the public API + call sites from dependent crates. Ask it to draft /// doc comments with description, arguments, returns, errors, and examples. Review for accuracy, especially around era transition semantics.",
+      "kb_ref": "rs_rustdoc_generation",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific crates named. Starting with mithril-era is justified by recent commit activity. Measurable via cargo doc."
+    },
+    {
+      "id": "rec-mithril-trait-tests",
+      "title": "AI-generate property tests for cryptographic trait contracts in mithril-stm and serialization traits in mithril-common",
+      "type": "foundation_first",
+      "effort": "Medium",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-mithril-rs_trait_test_gen",
+      "measurable_outcome": "proptest or quickcheck added to dev-dependencies in mithril-stm/Cargo.toml and mithril-common/Cargo.toml. At least 3 property tests exist for trait implementations in each crate. Verifiable by checking Cargo.toml and test files.",
+      "recommended_learning": "Pick a trait in mithril-common with multiple implementations. Give Claude the trait definition + 2-3 impl blocks. Ask: 'What invariants should hold across all implementations?' Then: 'Generate proptest strategies for these invariants.' Focus on serialization round-trip properties first (serialize then deserialize = identity) as these are the most mechanical to verify.",
+      "kb_ref": "rs_trait_test_gen",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to mithril-stm crypto traits and mithril-common serialization. Foundation-first correct -- needs proptest dependency added. Measurable via Cargo.toml and test file checks."
+    }
+  ],
+  "flags": {
+    "risky_acceleration": [],
+    "adhoc_usage": false
+  },
+  "quadrant": {
+    "ai_potential": "HIGH",
+    "ai_activity": "LOW",
+    "position": "High Potential, Low Activity -- Untapped. Mithril has strong engineering foundations (comprehensive CI, ADRs, structured logging, security scanning, PR reviews) and copilot-instructions.md indicating AI tool awareness, but zero observable AI-attributed commits. The gap between potential and activity represents the largest opportunity surface in this scan."
+  },
+  "kb_nominations": [
+    "Consider KB pattern for 'AI-assisted SNARK proof verification review' -- mithril's active SNARK prover integration is a novel use case not covered by existing KB patterns"
+  ],
+  "mastered_nominations": [],
+  "previous_scan_date": null,
+  "coe_annotations": []
+}

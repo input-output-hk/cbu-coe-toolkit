@@ -1,0 +1,432 @@
+{
+  "schema_version": "6.0",
+  "scan_type": "scoring",
+  "scan_date": "2026-03-31",
+  "agent_model": "claude-opus-4-6[1m]",
+  "repo": {
+    "owner": "cardano-scaling",
+    "name": "hydra",
+    "ecosystem": "haskell"
+  },
+  "opportunity_map": [
+    {
+      "id": "opp_hydra_headlogic_property_corners",
+      "title": "Use AI to discover untested corner cases in HeadLogic snapshot and state machine property tests",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 1,
+      "evidence": "hydra-node/test/Hydra/Model.hs (model-based testing), hydra-node/test/Hydra/HeadLogicSpec.hs, hydra-node/test/Hydra/HeadLogicSnapshotSpec.hs, testlib Gen.hs files in 3 packages, PR #2560 describes 3 snapshot liveness bugs (version race, deposit dropped mid-snapshot, deposits from other heads leaking)",
+      "kb_pattern": "hs_quickcheck_corner_cases",
+      "seen_in": [
+        {
+          "repo": "IntersectMBO/cardano-ledger",
+          "outcome": "identified gap in dijkstra era generators (2026-03-28 scan)"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to HeadLogic state machine, cites recent snapshot liveness bugs from PR #2560, property test infrastructure fully in place"
+    },
+    {
+      "id": "opp_hydra_claude_md",
+      "title": "Write substantive CLAUDE.md covering Hydra's 10-package architecture, on-chain validators, and protocol state machine",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 2,
+      "evidence": "CLAUDE.md exists at 14 bytes (placeholder/404). 10 packages: hydra-node, hydra-tx, hydra-plutus, hydra-plutus-extras, hydra-cardano-api, hydra-cluster, hydra-chain-observer, hydra-tui, hydra-prelude, hydra-test-utils. Security-critical: hydra-plutus/src/Hydra/Contract/*.hs, hydra-tx/src/Hydra/Tx/Crypto.hs",
+      "kb_pattern": "cc_claude_md_context",
+      "seen_in": [
+        {
+          "repo": "input-output-hk/lace-platform",
+          "outcome": "comprehensive CLAUDE.md covering architecture, conventions, testing"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "CLAUDE.md is confirmed placeholder (14 bytes). Project complexity (10 packages, on-chain validators, formal spec) makes this high-value."
+    },
+    {
+      "id": "opp_hydra_aiignore",
+      "title": "Create .aiignore trust boundaries for Hydra on-chain validators (hydra-plutus/) and cryptographic operations",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 3,
+      "evidence": ".aiignore ABSENT. Security-critical paths: hydra-plutus/src/Hydra/Contract/Head.hs (head validator), hydra-plutus/src/Hydra/Contract/Deposit.hs (deposit validator), hydra-plutus/validators/deposit.ak (Aiken validator), hydra-tx/src/Hydra/Tx/Crypto.hs, hydra-plutus/scripts/vHead.plutus, hydra-plutus/scripts/mHead.plutus",
+      "kb_pattern": "cc_aiignore_boundaries",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Hydra handles real funds on-chain. PR #2536 refactored validators. Trust boundaries essential before AI adoption."
+    },
+    {
+      "id": "opp_hydra_mutation_expansion",
+      "title": "Use AI to expand mutation tests for vHead and vDeposit validators after Hydra V2 init-phase removal",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 4,
+      "evidence": "hydra-tx/testlib/Test/Hydra/Tx/Mutation.hs (mutation framework), hydra-tx/test/Hydra/Tx/Contract/Close/ (existing contract tests), PR #2536 (b7ad7a8) removed vInitial and vCommit validators leaving vHead and vDeposit as sole on-chain attack surface",
+      "kb_pattern": null,
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Novel opportunity specific to post-V2 refactor. Mutation framework exists. Remaining validators are the entire attack surface."
+    },
+    {
+      "id": "opp_hydra_haddock",
+      "title": "Use AI to generate Haddock documentation for hydra-tx transaction types and hydra-node HeadLogic modules",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 5,
+      "evidence": "hydra-tx/src/Hydra/Tx/*.hs (15+ modules: Close.hs, Contest.hs, Deposit.hs, Fanout.hs, Init.hs, Increment.hs, etc.), hydra-node/src/Hydra/HeadLogic/*.hs (State.hs, Input.hs, Outcome.hs, StateEvent.hs), hydra-plutus/src/Hydra/Contract/*.hs (12 modules). publish-docs.yaml workflow exists.",
+      "kb_pattern": "hs_haddock_generation",
+      "seen_in": [
+        {
+          "repo": "IntersectMBO/cardano-ledger",
+          "outcome": "45.8% Haddock coverage across 38 packages"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Targets specific packages and module paths. Haddock coverage gap is MEDIUM confidence (cannot read source)."
+    },
+    {
+      "id": "opp_hydra_debug_state",
+      "title": "Use AI to trace HeadLogic state transitions when debugging snapshot liveness and deposit coordination bugs",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 6,
+      "evidence": "hydra-node/src/Hydra/HeadLogic.hs + HeadLogic/State.hs, Input.hs, Outcome.hs (state machine). PR #2560 (v0d1ch): 3 snapshot liveness bugs — version race in RequestedSnapshot, deposit dropped mid-snapshot via selectNextDeposit, deposits from other heads via unfiltered pendingDeposits. External formal spec at cardano-scaling/hydra-formal-specification.",
+      "kb_pattern": "hs_debug_state_transitions",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to HeadLogic state machine. Cites 3 concrete recent bugs with root causes."
+    },
+    {
+      "id": "opp_hydra_pr_descriptions",
+      "title": "Use AI to generate structured PR descriptions beyond checklist template for Hydra protocol changes",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 7,
+      "evidence": ".github/pull_request_template.md (270 bytes, checklist: CHANGELOG/Documentation/Haddocks/TODOs). PR #2536 has extensive manual description. PR #2555 has minimal 'fix #2498'. Inconsistent depth across PRs.",
+      "kb_pattern": "cc_pr_descriptions",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Template exists but is checklist-only. Varying PR description quality confirmed. Lowest ROI among approved."
+    }
+  ],
+  "adoption_state": [
+    {
+      "opportunity_id": "opp_hydra_headlogic_property_corners",
+      "state": "Absent",
+      "evidence": "Zero AI Co-authored-by trailers in commit history. No AI config references property testing. No observable AI attribution found — this does not confirm absence of AI use."
+    },
+    {
+      "opportunity_id": "opp_hydra_claude_md",
+      "state": "Absent",
+      "evidence": "CLAUDE.md exists at 14 bytes (placeholder/404). No substantive AI configuration. Per anti-pattern ap_generic_claude_md, placeholder counts as absent."
+    },
+    {
+      "opportunity_id": "opp_hydra_aiignore",
+      "state": "Absent",
+      "evidence": ".aiignore file does not exist. No trust boundary documentation found in any config file."
+    },
+    {
+      "opportunity_id": "opp_hydra_mutation_expansion",
+      "state": "Absent",
+      "evidence": "Zero AI-attributed commits touching mutation test files. No observable AI attribution found."
+    },
+    {
+      "opportunity_id": "opp_hydra_haddock",
+      "state": "Absent",
+      "evidence": "Zero AI-attributed commits. No AI config referencing documentation generation."
+    },
+    {
+      "opportunity_id": "opp_hydra_debug_state",
+      "state": "Absent",
+      "evidence": "Zero AI-attributed commits touching HeadLogic modules. No AI config referencing debugging assistance."
+    },
+    {
+      "opportunity_id": "opp_hydra_pr_descriptions",
+      "state": "Absent",
+      "evidence": "No AI-generated PR descriptions detected. No empty CURSOR_SUMMARY markers or similar. No AI bot PR reviews."
+    }
+  ],
+  "readiness": [
+    {
+      "opportunity_id": "opp_hydra_headlogic_property_corners",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "Arbitrary instances exist per domain type",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "hydra-cardano-api/testlib/Hydra/Cardano/Api/Gen.hs, hydra-tx/testlib/Test/Hydra/Tx/Gen.hs, hydra-plutus/testlib/Hydra/Plutus/Gen.hs"
+        },
+        {
+          "criterion": "Shrinking implemented in generators",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "Gen.hs files exist in testlib directories. Cannot read contents to verify shrink implementations directly."
+        },
+        {
+          "criterion": "Formal spec exists for core invariants",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "cardano-scaling/hydra-formal-specification repo referenced in PR #2536. docs/docs/dev/specification.md and docs/docs/dev/protocol.md in this repo."
+        },
+        {
+          "criterion": "CI runs property tests",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "ci-nix.yaml runs nix flake check / nix build which includes cabal test suites containing property tests"
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp_hydra_claude_md",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "AI tool in use or planned",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "CLAUDE.md file exists (14 bytes placeholder) — file creation indicates intent to use Claude"
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp_hydra_aiignore",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "Security-critical paths identifiable in file tree",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "hydra-plutus/src/Hydra/Contract/*.hs (on-chain validators), hydra-tx/src/Hydra/Tx/Crypto.hs, hydra-plutus/validators/*.ak, hydra-plutus/scripts/*.plutus"
+        },
+        {
+          "criterion": "AI tools in active use",
+          "result": "NO",
+          "confidence": "HIGH",
+          "evidence": "Zero AI-attributed commits. CLAUDE.md is placeholder. No AI config files with substance."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp_hydra_mutation_expansion",
+      "level": "Not Assessable",
+      "criteria_results": [],
+      "risky_acceleration_flag": false,
+      "not_assessable_reason": "No KB criteria for use-case type: mutation-test-expansion. Novel opportunity — candidate for KB expansion."
+    },
+    {
+      "opportunity_id": "opp_hydra_haddock",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "Haddock tooling configured",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "publish-docs.yaml workflow exists for Haddock generation. Nix-based build includes haddock tooling."
+        },
+        {
+          "criterion": "Module exports are explicit",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "Multi-package Haskell project with well-structured module hierarchy. Cannot verify export lists without reading source."
+        },
+        {
+          "criterion": "At least some existing Haddock as style reference",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "publish-docs.yaml suggests active Haddock generation. hydra.family/head-protocol/ hosts published docs."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp_hydra_debug_state",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "State transition modules are identifiable in file tree",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "hydra-node/src/Hydra/HeadLogic.hs, HeadLogic/State.hs, HeadLogic/Input.hs, HeadLogic/Outcome.hs"
+        },
+        {
+          "criterion": "Formal spec or invariant documentation exists",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "cardano-scaling/hydra-formal-specification (external). docs/docs/dev/specification.md, docs/docs/dev/protocol.md"
+        },
+        {
+          "criterion": "Test coverage exists for state transitions",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "hydra-node/test/Hydra/HeadLogicSpec.hs, HeadLogicSnapshotSpec.hs, Model.hs, ModelSpec.hs, Chain/Direct/TxTraceSpec.hs"
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp_hydra_pr_descriptions",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "PR template exists",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": ".github/pull_request_template.md (270 bytes)"
+        },
+        {
+          "criterion": "CI runs on PRs",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "ci-nix.yaml triggered on pull_request events"
+        }
+      ],
+      "risky_acceleration_flag": false
+    }
+  ],
+  "risk_surface": [
+    {
+      "path": "hydra-plutus/src/Hydra/Contract/",
+      "detection_difficulty": "LOW",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "On-chain validators (Head.hs, Deposit.hs, HeadTokens.hs). Mutation tests in hydra-tx/test/Hydra/Tx/Contract/. Golden tests in hydra-node/golden/.",
+      "intersecting_opportunities": ["opp_hydra_mutation_expansion"]
+    },
+    {
+      "path": "hydra-plutus/validators/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Aiken on-chain validators (deposit.ak, util.ak). No Aiken-specific test framework detected in tree.",
+      "intersecting_opportunities": ["opp_hydra_mutation_expansion"]
+    },
+    {
+      "path": "hydra-tx/src/Hydra/Tx/Crypto.hs",
+      "detection_difficulty": "LOW",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Cryptographic operations. Dedicated test: hydra-node/test/Hydra/CryptoSpec.hs.",
+      "intersecting_opportunities": []
+    },
+    {
+      "path": "hydra-node/src/Hydra/HeadLogic.hs",
+      "detection_difficulty": "LOW",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "L2 protocol state machine. Extensive testing: HeadLogicSpec.hs, HeadLogicSnapshotSpec.hs, Model.hs, ModelSpec.hs, TxTraceSpec.hs.",
+      "intersecting_opportunities": ["opp_hydra_headlogic_property_corners", "opp_hydra_debug_state"]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec_hydra_claude_md",
+      "title": "Write CLAUDE.md covering Hydra's package architecture, on-chain validators, HeadLogic state machine, testing strategy, and security-critical paths",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp_hydra_claude_md",
+      "measurable_outcome": "CLAUDE.md exists with >500 words covering: (1) package architecture and module boundaries for all 10 packages, (2) on-chain validator paths in hydra-plutus, (3) HeadLogic state machine overview, (4) testing strategy (property tests, model-based, mutation), (5) build commands (nix develop, cabal test), (6) security-critical paths that require careful review",
+      "recommended_learning": "Review input-output-hk/lace-platform's CLAUDE.md as a reference. Start by writing one paragraph per package describing its role. Then add the security-critical paths section listing hydra-plutus/src/Hydra/Contract/*.hs and hydra-tx/src/Hydra/Tx/Crypto.hs. Then add testing strategy referencing Model.hs, Mutation.hs, and the Gen.hs testlib files.",
+      "kb_ref": "cc_claude_md_context",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Traces to confirmed placeholder CLAUDE.md. Measurable outcome is specific and verifiable. Scope is clear."
+    },
+    {
+      "id": "rec_hydra_aiignore",
+      "title": "Create .aiignore listing hydra-plutus/src/Hydra/Contract/, hydra-plutus/validators/, hydra-plutus/scripts/, and hydra-tx/src/Hydra/Tx/Crypto.hs",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp_hydra_aiignore",
+      "measurable_outcome": ".aiignore exists at repo root containing at minimum: hydra-plutus/src/Hydra/Contract/, hydra-plutus/validators/, hydra-plutus/scripts/, hydra-tx/src/Hydra/Tx/Crypto.hs",
+      "recommended_learning": "Create .aiignore at repo root using .gitignore syntax. List one path per line. Start with the four paths above. Review with the team to add any other sensitive paths (e.g., demo/*.sk private key files). This is a preventive measure before AI tool adoption.",
+      "kb_ref": "cc_aiignore_boundaries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Trivial to create. Specific paths listed. Essential foundation before AI adoption on a financial protocol."
+    },
+    {
+      "id": "rec_hydra_property_corners",
+      "title": "Use AI to discover untested snapshot liveness invariants in HeadLogicSnapshotSpec.hs based on PR #2560 bug patterns",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp_hydra_headlogic_property_corners",
+      "measurable_outcome": "At least 3 new property tests added to hydra-node/test/Hydra/HeadLogicSnapshotSpec.hs or hydra-node/test/Hydra/HeadLogicSpec.hs targeting snapshot liveness invariants (version race, deposit coordination, cross-head isolation)",
+      "recommended_learning": "Start with one property: give Claude HeadLogic/State.hs + HeadLogicSnapshotSpec.hs + the PR #2560 description. Ask: 'What snapshot liveness invariants are not covered by existing property tests? Propose 3 property tests targeting the version-race, deposit-mid-snapshot, and cross-head-deposit-leak bug classes.' Review against the formal spec before committing.",
+      "kb_ref": "hs_quickcheck_corner_cases",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific bug classes cited. Infrastructure fully in place. Measurable outcome is concrete."
+    },
+    {
+      "id": "rec_hydra_mutation_expansion",
+      "title": "Use AI to generate mutation test variants for vHead and vDeposit validators targeting post-V2 attack surface",
+      "type": "kb_gap",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp_hydra_mutation_expansion",
+      "measurable_outcome": "At least 5 new mutation test cases added to hydra-tx/test/Hydra/Tx/Contract/ targeting vHead validator (Head.hs) and vDeposit validator (Deposit.hs) for mutations not covered by existing CloseInitial.hs and CloseUnused.hs tests",
+      "recommended_learning": "Give Claude hydra-tx/testlib/Test/Hydra/Tx/Mutation.hs + one existing contract test (e.g., CloseInitial.hs) + the validator source (hydra-plutus/src/Hydra/Contract/Head.hs). Ask: 'What mutations of the vHead validator would bypass the existing tests? Generate mutation test cases following the Mutation.hs pattern.' Focus on the deposit/increment flow added in V2.",
+      "kb_ref": null,
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to post-V2 refactor. Mutation framework exists. Type corrected to kb_gap (no KB readiness criteria)."
+    },
+    {
+      "id": "rec_hydra_haddock",
+      "title": "Use AI to generate Haddock documentation for underdocumented hydra-tx/src/Hydra/Tx/ transaction modules",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp_hydra_haddock",
+      "measurable_outcome": "At least 5 modules in hydra-tx/src/Hydra/Tx/ (Close.hs, Contest.hs, Deposit.hs, Increment.hs, Snapshot.hs) have Haddock doc comments on all exported functions and types",
+      "recommended_learning": "Pick hydra-tx/src/Hydra/Tx/Deposit.hs (actively changed in V2). Give Claude the module + modules that import it. Ask: 'Draft Haddock comments for all exported functions explaining purpose, parameters, and relationship to the Hydra protocol.' Review for accuracy against the formal spec and protocol documentation.",
+      "kb_ref": "hs_haddock_generation",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific modules named. publish-docs.yaml confirms Haddock is configured. Measurable outcome is verifiable."
+    },
+    {
+      "id": "rec_hydra_debug_state",
+      "title": "Document HeadLogic state machine in CLAUDE.md with AI debugging prompts for snapshot liveness issues",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp_hydra_debug_state",
+      "measurable_outcome": "CLAUDE.md includes a 'Debugging HeadLogic' section with: (1) state machine states and transitions diagram or description, (2) key modules to provide to AI for state tracing (HeadLogic.hs, State.hs, Input.hs, Outcome.hs), (3) at least 2 example AI prompts for debugging snapshot and deposit issues",
+      "recommended_learning": "When debugging a failing test or unexpected state transition: give Claude HeadLogic.hs + State.hs + the failing test output. Ask: 'Trace the state transition step by step. Which precondition is violated?' Use AI for the mechanical state tracing, validate conclusions against the formal spec. Document the pattern in CLAUDE.md so the team can reuse it.",
+      "kb_ref": "hs_debug_state_transitions",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Combines with rec_hydra_claude_md. Measurable outcome is specific section in CLAUDE.md."
+    },
+    {
+      "id": "rec_hydra_pr_descriptions",
+      "title": "Use AI to generate structured PR descriptions with 'What changed / Why / How to test' sections for Hydra protocol changes",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "LOW",
+      "opportunity_id": "opp_hydra_pr_descriptions",
+      "measurable_outcome": "5 consecutive merged PRs include structured descriptions with 'What changed' (bullet points), 'Why' (issue link + context), and 'How to test' sections beyond the existing checklist template",
+      "recommended_learning": "Before submitting a PR, run the diff through Claude and ask: 'Generate a PR description with: What changed (bullet points), Why (context and motivation), How to test (specific steps). Include any breaking changes.' Edit the output — it captures the 'what' well but often misses the 'why.'",
+      "kb_ref": "cc_pr_descriptions",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Lowest priority. Template exists but is checklist-only. Incremental improvement."
+    }
+  ],
+  "flags": {
+    "risky_acceleration": [],
+    "adhoc_usage": false
+  },
+  "quadrant": {
+    "ai_potential": "HIGH",
+    "ai_activity": "LOW",
+    "position": "High Potential, Low Activity — Untapped opportunity: infrastructure ready, adoption not started"
+  },
+  "kb_nominations": [
+    "hs_mutation_test_expansion: AI-assisted mutation test generation for on-chain validators. Discovered in cardano-scaling/hydra — Mutation.hs framework provides pattern for AI to generate new mutation variants targeting specific validators."
+  ],
+  "mastered_nominations": [],
+  "previous_scan_date": null,
+  "coe_annotations": []
+}

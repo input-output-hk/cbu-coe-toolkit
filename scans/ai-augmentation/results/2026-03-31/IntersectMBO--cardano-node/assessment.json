@@ -1,0 +1,229 @@
+{
+  "schema_version": "6.0",
+  "scan_type": "scoring",
+  "scan_date": "2026-03-31",
+  "agent_model": "claude-opus-4-6",
+  "repo": {
+    "owner": "IntersectMBO",
+    "name": "cardano-node",
+    "ecosystem": "haskell",
+    "project": "Cardano Core"
+  },
+  "opportunity_map": [
+    {
+      "id": "opp-node-aiignore",
+      "title": "Create .aiignore to protect protocol implementation paths and consensus integration code",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 1,
+      "evidence": ".aiignore absent. Protocol paths verified: cardano-node/src/Cardano/Node/Protocol/ (Byron.hs, Cardano.hs, Alonzo.hs, Conway.hs, Shelley.hs, Dijkstra.hs, Checkpoints.hs, Types.hs). Handlers: Handlers/Shutdown.hs, Handlers/TopLevel.hs. Genesis configs: configuration/cardano/mainnet-*.json.",
+      "kb_pattern": "cc_aiignore_boundaries",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "All paths verified in tree. Safety-first: protecting protocol and genesis config paths costs nothing."
+    },
+    {
+      "id": "opp-node-claude-md",
+      "title": "Create a substantive CLAUDE.md covering node integration architecture, nix build system, and security-critical protocol paths",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 2,
+      "evidence": "CLAUDE.md absent. 15 cabal packages. Integration point for ledger/consensus/networking. README.md has architecture mermaid diagram but no AI-facing context. Zero AI config files.",
+      "kb_pattern": "cc_claude_md_context",
+      "seen_in": [{"repo": "input-output-hk/lace-platform", "outcome": "comprehensive CLAUDE.md"}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "CLAUDE.md absence verified. trace-dispatcher references removed (does not exist in repo). Core value holds."
+    },
+    {
+      "id": "opp-node-config-validation",
+      "title": "Use AI to generate test cases for mainnet configuration validation, building on existing CI workflow",
+      "value": "MEDIUM",
+      "effort": "Medium",
+      "roi_rank": 3,
+      "evidence": "configuration/cardano/ has 20 files including mainnet genesis. check-mainnet-config.yml CI workflow exists. Test/Cardano/Config/Mainnet.hs exists as extension point. badConfig.yaml/goodConfig.yaml pattern in test data.",
+      "kb_pattern": null,
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Config paths, CI workflow, and test file all verified. Well-scoped task with existing infrastructure."
+    },
+    {
+      "id": "opp-node-trace-tests",
+      "title": "Use AI to expand trace-dispatcher test coverage",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "trace-dispatcher/ does not exist in repo tree.",
+      "kb_pattern": null,
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: Fabricated evidence. trace-dispatcher/ does not exist in the repo tree."
+    },
+    {
+      "id": "opp-node-haddock",
+      "title": "Generate Haddock documentation for undocumented modules",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "References trace-dispatcher (non-existent).",
+      "kb_pattern": "hs_haddock_generation",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: Half-fabricated evidence. References non-existent trace-dispatcher."
+    },
+    {
+      "id": "opp-node-onboarding",
+      "title": "Use AI to generate comprehensive developer onboarding docs",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "Vague scope.",
+      "kb_pattern": "cc_onboarding_docs",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: Vague scope. Ignores existing external wiki. Does not establish onboarding as actual bottleneck."
+    },
+    {
+      "id": "opp-node-pr-descriptions",
+      "title": "Use AI to generate structured PR descriptions",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "PR description variance not necessarily a quality problem.",
+      "kb_pattern": "cc_pr_descriptions",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: Misdiagnosed problem. PR template exists; issue is process compliance, not content generation."
+    }
+  ],
+  "adoption_state": [
+    {
+      "opportunity_id": "opp-node-aiignore",
+      "state": "Absent",
+      "evidence": "No .aiignore, no AI config files, no AI-attributed commits. No observable AI attribution found — this does not confirm absence of AI use."
+    },
+    {
+      "opportunity_id": "opp-node-claude-md",
+      "state": "Absent",
+      "evidence": "CLAUDE.md does not exist. No AI config files of any kind in the repository."
+    },
+    {
+      "opportunity_id": "opp-node-config-validation",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in config test files. Existing tests are human-authored."
+    }
+  ],
+  "readiness": [
+    {
+      "opportunity_id": "opp-node-aiignore",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Security-critical paths identifiable in file tree", "result": "YES", "confidence": "HIGH", "evidence": "Protocol/*.hs (8 files), Handlers/*.hs (2 files), configuration/cardano/mainnet-*.json all verified"},
+        {"criterion": "AI tools in active use", "result": "NO", "confidence": "HIGH", "evidence": "Zero AI-attributed commits, zero AI config files. Proactive boundary-setting still valuable."}
+      ]
+    },
+    {
+      "opportunity_id": "opp-node-claude-md",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "AI tool in use or planned", "result": "NO", "confidence": "HIGH", "evidence": "No AI tools in use. Repo complexity warrants CLAUDE.md preemptively for when AI tools are adopted."}
+      ]
+    },
+    {
+      "opportunity_id": "opp-node-config-validation",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Config files exist", "result": "YES", "confidence": "HIGH", "evidence": "20 files in configuration/cardano/ including mainnet genesis"},
+        {"criterion": "Conformance tests exist", "result": "YES", "confidence": "HIGH", "evidence": "Test/Cardano/Config/Mainnet.hs exists"},
+        {"criterion": "CI runs config validation", "result": "YES", "confidence": "HIGH", "evidence": "check-mainnet-config.yml workflow in .github/workflows/"}
+      ]
+    }
+  ],
+  "risk_surface": [
+    {
+      "path": "cardano-node/src/Cardano/Node/Protocol/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Protocol implementation — consensus integration. 8 .hs files. No AI commits. Network-wide impact if broken.",
+      "intersecting_opportunities": ["opp-node-aiignore"]
+    },
+    {
+      "path": "cardano-node/src/Cardano/Node/Handlers/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Shutdown and TopLevel handlers — operational safety. No AI commits.",
+      "intersecting_opportunities": ["opp-node-aiignore"]
+    },
+    {
+      "path": "configuration/cardano/mainnet-*.json",
+      "detection_difficulty": "LOW",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Mainnet genesis and config files. CI validates via check-mainnet-config.yml. No AI commits.",
+      "intersecting_opportunities": ["opp-node-aiignore", "opp-node-config-validation"]
+    },
+    {
+      "path": "cardano-node/src/Cardano/Node/Tracing/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "MEDIUM",
+      "ai_exposure": "none",
+      "evidence": "Tracing/observability — high churn area (14 changes in parent dir). Era-specific tracing tied to hard fork logic. No AI commits.",
+      "intersecting_opportunities": []
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-node-aiignore",
+      "title": "Create .aiignore listing Protocol/ handlers, genesis configs, and era-specific tracing paths",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-node-aiignore",
+      "measurable_outcome": ".aiignore exists at repo root listing ≥4 paths: cardano-node/src/Cardano/Node/Protocol/, cardano-node/src/Cardano/Node/Handlers/, configuration/cardano/mainnet-*, cardano-node/src/Cardano/Node/Tracing/Era/",
+      "recommended_learning": "Review with node team lead. Start with Protocol/ paths (highest blast radius). Use .gitignore syntax.",
+      "kb_ref": "cc_aiignore_boundaries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: All paths verified. Measurable outcome binary. Type valid (Absent + Practiced)."
+    },
+    {
+      "id": "rec-node-claude-md",
+      "title": "Write CLAUDE.md covering 15-package integration architecture, nix build commands, external dependency boundaries, and contribution standards",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-node-claude-md",
+      "measurable_outcome": "CLAUDE.md exists at repo root with ≥200 words covering: (1) integration architecture, (2) package map, (3) nix + cabal build commands, (4) external dependency boundaries, (5) contribution standards, (6) security-critical paths",
+      "recommended_learning": "Use README.md mermaid diagram as architecture starting point. Reference CONTRIBUTING.md for workflow. Document what is IN this repo vs what comes from cardano-ledger, ouroboros-consensus, ouroboros-network. Tracing code lives in cardano-node/src/Cardano/Node/Tracing/ and cardano-tracer/.",
+      "kb_ref": "cc_claude_md_context",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: CLAUDE.md absence verified. Measurable outcome binary. Type valid."
+    },
+    {
+      "id": "rec-node-config-tests",
+      "title": "Extend mainnet config validation tests in Test/Cardano/Config/Mainnet.hs using AI to generate permutation test cases",
+      "type": "start_now",
+      "effort": "Medium",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-node-config-validation",
+      "measurable_outcome": "cardano-node/test/Test/Cardano/Config/Mainnet.hs has ≥5 additional test cases covering: invalid genesis hash, missing required fields, type mismatches",
+      "recommended_learning": "Give Claude Mainnet.hs + mainnet-config.json + mainnet-config.yaml. Ask: 'What config permutations are not tested?' Reference badConfig.yaml/goodConfig.yaml pattern from Test/Cardano/Tracing/NewTracing/data/.",
+      "kb_ref": null,
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: Test file and config files verified. Measurable outcome binary. Type valid."
+    }
+  ],
+  "flags": {
+    "risky_acceleration": [],
+    "adhoc_usage": false
+  },
+  "quadrant": {
+    "ai_potential": "HIGH",
+    "ai_activity": "LOW",
+    "position": "High potential, low activity — no AI adoption detected, strong infrastructure for it"
+  },
+  "kb_nominations": [],
+  "mastered_nominations": [],
+  "previous_scan_date": null,
+  "coe_annotations": []
+}

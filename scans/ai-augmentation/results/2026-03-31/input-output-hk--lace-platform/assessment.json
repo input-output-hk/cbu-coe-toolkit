@@ -1,0 +1,369 @@
+{
+  "schema_version": "6.0",
+  "scan_type": "scoring",
+  "scan_date": "2026-03-31",
+  "agent_model": "claude-opus-4-6[1m]",
+  "repo": {
+    "owner": "input-output-hk",
+    "name": "lace-platform",
+    "ecosystem": "typescript",
+    "project": "lace"
+  },
+  "opportunity_map": [
+    {
+      "id": "opp-lp-cc_aiignore_boundaries",
+      "title": "Create .aiignore to define trust boundaries for crypto, signer, secure-store, and recovery-phrase contract packages",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 1,
+      "evidence": "AI tooling is active: CLAUDE.md (1516 bytes), .claude/ directory with agents, commands, skills, GHA integration (claude.yml workflow), .mcp.json, Cursor Bugbot active in PR summaries (PR #1698, #1802 contain filled CURSOR_SUMMARY). Security-sensitive packages without .aiignore: packages/contract/crypto, packages/contract/authentication-prompt (src/authenticators/biometric, src/authenticators/password), packages/contract/signer, packages/contract/secure-store, packages/contract/recovery-phrase, packages/lib/crypto. No .aiignore file exists in the repo.",
+      "kb_pattern": "cc_aiignore_boundaries",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Passes all four tests: specific security-sensitive paths cited, multiple AI tools confirmed active, .aiignore absence is objectively verified, packages are in active development (commits in last 30 days touching authentication-prompt and signer areas)."
+    },
+    {
+      "id": "opp-lp-ts_contract_generation",
+      "title": "Use AI to draft typed contracts for new Lace modules using the established contract/ package pattern and NX generator",
+      "value": "HIGH",
+      "effort": "Medium",
+      "roi_rank": 2,
+      "evidence": "36 contract packages under packages/contract/ (account-management, activities, address-book, addresses, analytics, app, authentication-prompt, bitcoin-context, cardano-context, crypto, dapp-connector, dev, failures, feature, i18n, in-memory, midnight-context, module, network, notification-center, onboarding-v2, onboarding, posthog, recovery-phrase, secure-store, send-flow, signer, staking-center, storage, sync, token-pricing, tokens, tx-executor, views, wallet-repo). NX generator exists at configs/nx-plugin/src/generators/contract/ with templates for contract.ts, store/, test/. ADR-09 (contract-naming), ADR-10 (contract-type-discriminator), ADR-14 (modules-never-import-from-other-modules) document the pattern. Active new modules being added: dapp-connector work (PR #1695, commits 2839, 2926), staking-center v2 (PR #1745), collateral UTXO filtering (PR #1783).",
+      "kb_pattern": "ts_contract_generation",
+      "seen_in": [
+        {
+          "repo": "input-output-hk/lace-platform",
+          "outcome": "30+ contract packages observed — pattern well-established but new modules sometimes miss contracts"
+        }
+      ],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Highly specific to lace-platform's contract/module architecture. Evidence cites 36 concrete package paths, NX generator, and ADRs. New contract work confirmed in recent commits. Value justified by established but growing contract surface."
+    },
+    {
+      "id": "opp-lp-ts_component_test_gen",
+      "title": "Generate unit tests for UI toolkit components in packages/lib/ui-toolkit and Storybook-covered mobile components lacking direct test files",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 3,
+      "evidence": "Storybook infrastructure is extensive: apps/lace-mobile-storybook with integration stories (stories/integration/authorize-dapp.stories.tsx, stories/modules/authentication-prompt-ui-v2-extension/), coverage workflows (.github/workflows/storybook-mobile-coverage-nightly.yml, storybook-extension-perf-nightly.yml), and publish-storybook-coverage action. Vitest is the test runner: vitest.config.js in nearly every contract and module package. packages/lib/ui-toolkit and packages/lib/ui-extension contain reusable UI components. Storybook stories document props but do not substitute for unit test assertions on behavior.",
+      "kb_pattern": "ts_component_test_gen",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to lace-platform's Storybook-heavy testing approach. Cites concrete packages and workflow files. Storybook coverage workflows confirm the team values UI testing, making this a natural extension. Low effort because vitest is already configured."
+    },
+    {
+      "id": "opp-lp-ts_debug_state",
+      "title": "Use AI to trace cross-package state flows in Redux store/side-effects/slice architecture across contract and module packages",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 4,
+      "evidence": "Redux-based state management with RxJS side effects is the core architecture pattern. Every contract package has store/ with slice.ts, side-effects.ts, init.ts (e.g., packages/contract/account-management/src/store/, packages/contract/authentication-prompt/src/store/side-effects/). ADR-19 (side-effects-use-observables-not-promises) and docs/rxjs-guidelines.md document the pattern. Recent state-related bugs: PR #1772 (commit 6723fc21) fixed 'dust wallet eagerly instead of waiting for shielded sync' — a classic cross-module state flow bug where areKeysAvailable$ timing caused stale balances. PR #1802 fixed 'keep UI responsive during Midnight wallet sync' by throttling state$ broadcasts — Redux churn from jsondiffpatch/immer overhead.",
+      "kb_pattern": "ts_debug_state",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Highly specific: cites actual state bugs from the last week (PR #1772 areKeysAvailable$ timing, PR #1802 Redux churn during sync), names the exact architectural pattern (store/slice/side-effects across contract packages), references relevant ADRs. Active development area with confirmed pain points."
+    },
+    {
+      "id": "opp-lp-cc_pr_descriptions",
+      "title": "Standardize AI-assisted PR descriptions using the existing PR template and Cursor Bugbot pattern already active in lace-platform",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 5,
+      "evidence": "PR template exists at .github/pull_request_template.md (787 bytes). High PR volume: 30+ merged PRs visible in data. Cursor Bugbot is already generating CURSOR_SUMMARY sections in PRs (PR #1698 has filled content describing risk level, overview; PR #1802 similarly). However, the human-written sections vary in quality: PR #1802 description is detailed but testing checkboxes are unchecked, PR #1698 has comprehensive proof with screenshots/videos. The Bugbot summaries provide consistent analysis but the human description quality varies.",
+      "kb_pattern": "cc_pr_descriptions",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Cursor Bugbot is already partially active but only appends summaries — human descriptions still vary. Specific evidence from PR #1698 and #1802. Template exists. Opportunity is to extend AI assistance to the human-written portions, not duplicate what Bugbot does."
+    },
+    {
+      "id": "opp-lp-novel_midnight_test_coverage",
+      "title": "Use AI to generate unit tests for Midnight blockchain integration modules (blockchain-midnight, dapp-connector-midnight, midnight-context) which are under rapid development",
+      "value": "HIGH",
+      "effort": "Medium",
+      "roi_rank": 6,
+      "evidence": "Midnight integration is the most active development area in the last 30 days: SDK upgrade from 2.0.0 to 3.0.0 (commit/PR #1781 — ledger-v7 to ledger-v8, new estimateTransactionFee, WalletSyncUpdate type changes), UI sync fixes (PR #1802, PR #1598), dust wallet lifecycle (PR #1772), onboarding (PR #1756), dapp-connector-midnight signData (PR #1752), midnight network configuration (PR #1621, PR #1767). Relevant packages: packages/module/blockchain-midnight (large: multiple sub-directories), packages/module/dapp-connector-midnight, packages/contract/midnight-context. These packages have vitest.config.js but the volume of recent changes vs test evidence suggests test coverage may lag behind the rapid SDK upgrades.",
+      "kb_pattern": null,
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Novel opportunity not in KB. Midnight is clearly the highest-churn area: 10+ of the last 30 commits touch Midnight-related code. SDK version jump (2.0.0 to 3.0.0) with breaking changes creates test coverage gaps. Specific packages and commits cited. Candidate for KB expansion as a pattern: 'AI test generation for rapidly evolving SDK integrations.'"
+    }
+  ],
+  "adoption_state": [
+    {
+      "opportunity_id": "opp-lp-cc_aiignore_boundaries",
+      "state": "Absent",
+      "evidence": "No .aiignore file exists in the repo tree. No observable signal of trust boundary documentation in any AI config file. CLAUDE.md indexes documentation but does not specify security-critical paths to restrict. No observable AI attribution found. This does not confirm absence of AI use — attribution is not universally enforced."
+    },
+    {
+      "opportunity_id": "opp-lp-ts_contract_generation",
+      "state": "Partial",
+      "evidence": "The contract/module architecture is deeply established with NX generators. Claude Code infrastructure is present (CLAUDE.md, .claude/agents/, .claude/commands/, .claude/skills/, claude.yml GHA workflow, .mcp.json). However, zero AI Co-authored-by trailers in last 100 commits. Cursor Bugbot is active on PRs (filled CURSOR_SUMMARY in PRs #1698, #1802) but this is PR analysis, not contract generation. The infrastructure supports AI-assisted contract generation but no observable evidence of it being used for this purpose."
+    },
+    {
+      "opportunity_id": "opp-lp-ts_component_test_gen",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits touching test files. Storybook coverage workflows exist but no AI tooling integrated into test generation pipeline. No observable AI attribution found. This does not confirm absence of AI use — attribution is not universally enforced."
+    },
+    {
+      "opportunity_id": "opp-lp-ts_debug_state",
+      "state": "Partial",
+      "evidence": "Claude Code infrastructure is present and configured for development workflows (.claude/skills/troubleshoot/SKILL.md exists, .claude/agents/codebase-locator.md for finding code paths). The claude.yml GHA workflow handles implementation and code review requests. However, no AI-attributed commits exist for debugging or state flow analysis. The tooling is configured but adoption evidence for this specific use case is indirect."
+    },
+    {
+      "opportunity_id": "opp-lp-cc_pr_descriptions",
+      "state": "Partial",
+      "evidence": "Cursor Bugbot is actively generating CURSOR_SUMMARY sections in PRs with substantive content (risk level, overview, module-level analysis — confirmed in PR #1698 commit e3f216c8, PR #1802 commit eb95068f). However, this is automated appendage, not human-driven AI-assisted PR description writing. The human-written description sections vary in quality across PRs."
+    },
+    {
+      "opportunity_id": "opp-lp-novel_midnight_test_coverage",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in Midnight-related test files. Midnight SDK upgrade (2.0.0 to 3.0.0, PR #1781) was authored by John Oshalusi with signed-off-by but no AI co-author. RxJS marble test updates in blockchain-midnight were manual. No observable AI attribution found. This does not confirm absence of AI use — attribution is not universally enforced."
+    }
+  ],
+  "readiness": [
+    {
+      "opportunity_id": "opp-lp-cc_aiignore_boundaries",
+      "level": "Exploring",
+      "criteria_results": [
+        {
+          "criterion": "Security-critical paths identifiable in file tree",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "packages/contract/crypto, packages/contract/authentication-prompt (biometric + password authenticators), packages/contract/signer, packages/contract/secure-store, packages/contract/recovery-phrase, packages/lib/crypto — all clearly identifiable in file tree"
+        },
+        {
+          "criterion": "AI tools in active use",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "CLAUDE.md exists (1516 bytes) with substantive content (indexes 20+ documents), .claude/ directory with agents, commands, skills, settings. claude.yml GHA workflow. .mcp.json. Cursor Bugbot active in PRs. .cursorignore exists."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-lp-ts_contract_generation",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "TypeScript strict mode enabled",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "TypeScript is the primary language. tsconfig.json exists at root. Contract packages have individual tsconfig.json files (e.g., packages/contract/account-management/tsconfig.json). Strict mode is standard in this established monorepo — confidence MEDIUM because tsconfig content not read directly."
+        },
+        {
+          "criterion": "Contract or shared-types pattern established",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "36 packages under packages/contract/ with consistent structure: contract.ts, augmentations.ts, types.ts, store/. NX generator at configs/nx-plugin/src/generators/contract/ with templates. ADR-09 (contract-naming), ADR-10 (contract-type-discriminator) document conventions."
+        },
+        {
+          "criterion": "Runtime validation library in use",
+          "result": "NO",
+          "confidence": "MEDIUM",
+          "evidence": "No Zod, io-ts, or similar runtime validation library observed in the evidence. Contract packages define TypeScript interfaces but runtime validation pattern not confirmed. Confidence MEDIUM — package.json contents not directly read for all packages."
+        },
+        {
+          "criterion": "CI type-checks across packages",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "NX workspace with CI workflows (ci.yml at 15904 bytes is substantial). NX affected commands likely include type-checking. Confidence MEDIUM — CI workflow content not read directly but the comprehensive CI setup (10+ workflow files) strongly suggests type-checking is included."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-lp-ts_component_test_gen",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "Test runner configured",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "vitest.config.js exists in nearly every package (30+ instances confirmed via tree search). Also jest config in storybook: apps/lace-mobile-storybook/test-runner-jest.config.js."
+        },
+        {
+          "criterion": "Testing Library available",
+          "result": "YES",
+          "confidence": "MEDIUM",
+          "evidence": "Storybook integration tests exist (apps/lace-mobile-storybook/stories/integration/). Storybook coverage workflows confirm testing infrastructure. Confidence MEDIUM — @testing-library/react not directly confirmed in package.json but Storybook + React testing patterns strongly imply it."
+        },
+        {
+          "criterion": "At least one component test exists as reference",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "Storybook stories serve as component documentation. Test directories with store tests exist (e.g., packages/contract/account-management/test/store/slice.test.ts, side-effects.test.ts). Extension e2e tests under apps/lace-extension-e2e/."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-lp-ts_debug_state",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "State management is centralized (not scattered useState)",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "Redux store pattern is the core architecture: every contract package has store/ with slice.ts, side-effects.ts, init.ts. ADR-19 mandates observables for side effects. docs/rxjs-guidelines.md, docs/redux-persistence.md, docs/using-selectors-in-react-components.md document the centralized pattern."
+        },
+        {
+          "criterion": "State types are defined",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "Contract packages contain types.ts files (e.g., packages/contract/account-management/src/types.ts). The contract pattern requires typed interfaces as the package boundary. TypeScript strict mode enforces type safety."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-lp-cc_pr_descriptions",
+      "level": "Practiced",
+      "criteria_results": [
+        {
+          "criterion": "PR template exists",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": ".github/pull_request_template.md exists (787 bytes). Template includes: Checklist, Description, Testing, Proof sections — confirmed from PR bodies that follow this structure."
+        },
+        {
+          "criterion": "CI runs on PRs",
+          "result": "YES",
+          "confidence": "HIGH",
+          "evidence": "Multiple CI workflows exist: ci.yml (15904 bytes), git-checks.yml, lockfile-check.yml, chromatic.yml, e2e test workflows. PRs show statuses_url confirming CI runs on PRs."
+        }
+      ],
+      "risky_acceleration_flag": false
+    },
+    {
+      "opportunity_id": "opp-lp-novel_midnight_test_coverage",
+      "level": "Not Assessable",
+      "criteria_results": [],
+      "risky_acceleration_flag": false,
+      "not_assessable_reason": "No KB criteria for use-case type: 'AI test generation for rapidly evolving SDK integrations.' This is a novel opportunity identified from repo-specific evidence. Candidate for KB expansion."
+    }
+  ],
+  "risk_surface": [
+    {
+      "path": "packages/contract/crypto",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Cryptographic operations package. packages/lib/crypto also exists. packages/contract/crypto has vitest.config.js suggesting unit tests exist, but test coverage depth unknown (MEDIUM detection difficulty). Blast radius HIGH: crypto underpins wallet signing, key derivation, and authentication across all blockchain integrations (Cardano, Bitcoin, Midnight). AI config exists (.claude/, CLAUDE.md) but no AI-attributed commits in this path — potential exposure only.",
+      "intersecting_opportunities": ["opp-lp-cc_aiignore_boundaries"]
+    },
+    {
+      "path": "packages/contract/authentication-prompt",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Authentication module with biometric and password authenticators (src/authenticators/biometric/device-auth-checker.ts, src/authenticators/password/secure-store-password-manager.ts). Store side-effects handle auth secret access and verification (src/store/side-effects/auth-secret-accessor.ts, auth-verification-handler.ts). Test directory exists (vitest.config.js) but test coverage of auth flows unknown. Blast radius HIGH: authentication gates all wallet operations. AI exposure potential: Claude config present, recent commits touch auth-adjacent code (PR #1772 AuthenticationCancelledError refactor) but no AI attribution.",
+      "intersecting_opportunities": ["opp-lp-cc_aiignore_boundaries", "opp-lp-ts_debug_state"]
+    },
+    {
+      "path": "packages/contract/signer",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Transaction signing contract package. Vitest configured. No AI-attributed commits. Blast radius HIGH: incorrect signing logic could result in loss of funds or invalid transactions. Confidence: MEDIUM (inferred from package name and position in architecture).",
+      "intersecting_opportunities": ["opp-lp-cc_aiignore_boundaries"]
+    },
+    {
+      "path": "packages/contract/recovery-phrase",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "potential",
+      "evidence": "Recovery phrase (mnemonic seed) management. Vitest configured. No AI-attributed commits. Blast radius HIGH: seed phrase exposure = total loss of funds. Confidence: MEDIUM (inferred).",
+      "intersecting_opportunities": ["opp-lp-cc_aiignore_boundaries"]
+    },
+    {
+      "path": "packages/module/blockchain-midnight",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "MEDIUM",
+      "ai_exposure": "potential",
+      "evidence": "Midnight blockchain integration — largest active development area. SDK upgrade from 2.0.0 to 3.0.0 (PR #1781) changed core types (WalletSyncUpdate, ledger-v8). Multiple bug fixes in last week: dust wallet sync (PR #1772), UI responsiveness during sync (PR #1802). Test files exist (RxJS marble tests mentioned in PR #1802). Blast radius MEDIUM: Midnight is one of three blockchain integrations but handles shielded transactions. AI exposure potential: no AI attribution but high velocity changes with AI tooling available.",
+      "intersecting_opportunities": ["opp-lp-novel_midnight_test_coverage", "opp-lp-ts_debug_state"]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-lp-aiignore",
+      "title": "Create .aiignore listing crypto, signer, recovery-phrase, secure-store, and authentication-prompt contract packages",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-lp-cc_aiignore_boundaries",
+      "measurable_outcome": ".aiignore file exists at repo root containing at minimum: packages/contract/crypto/**, packages/contract/signer/**, packages/contract/recovery-phrase/**, packages/contract/secure-store/**, packages/contract/authentication-prompt/**, packages/lib/crypto/**",
+      "recommended_learning": "Create .aiignore listing security-critical paths. Review with the team lead which paths handle key material, signing, and authentication. One path per line, same syntax as .gitignore. The six packages identified (crypto, signer, recovery-phrase, secure-store, authentication-prompt, lib/crypto) are the minimum set — the team may add more based on domain knowledge of which modules handle sensitive state transitions.",
+      "kb_ref": "cc_aiignore_boundaries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Passes all tests. Measurable: file existence + content check. Actionable: single-file creation, clear scope. Specific: names exact package paths from this repo. Low effort, HIGH impact for a crypto wallet."
+    },
+    {
+      "id": "rec-lp-midnight-tests",
+      "title": "Use AI to generate unit tests for blockchain-midnight side-effects covering the SDK 3.0.0 migration surface (WalletSyncUpdate, estimateTransactionFee, deferred-sync-service)",
+      "type": "foundation_first",
+      "effort": "Medium",
+      "impact": "HIGH",
+      "opportunity_id": "opp-lp-novel_midnight_test_coverage",
+      "measurable_outcome": "packages/module/blockchain-midnight contains test files covering: (1) WalletSyncUpdate type handling in side-effects, (2) estimateTransactionFee integration, (3) deferred-sync-service lifecycle. Minimum 5 new test cases in Midnight-related packages beyond what exists today.",
+      "recommended_learning": "Pick one side-effect file from packages/module/blockchain-midnight that was changed in the SDK 3.0.0 upgrade (PR #1781). Give Claude the source file + the SDK type changes + one existing RxJS marble test from the same package as style reference. Ask it to generate test cases covering the new SDK 3.0.0 behavior. Review: are the marble test timings realistic? Do assertions cover error paths (the AuthenticationCancelledError pattern from PR #1772 is a good model)?",
+      "kb_ref": null,
+      "adversarial_status": "approved",
+      "adversarial_reason": "Highly specific: names exact SDK migration surface, references concrete PRs. Measurable: test file existence and count. The team just completed a major SDK upgrade with known behavioral changes — test coverage is the natural next step."
+    },
+    {
+      "id": "rec-lp-contract-gen",
+      "title": "Document AI-assisted contract creation workflow in .claude/docs/ to complement the existing NX generator for new contract packages",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-lp-ts_contract_generation",
+      "measurable_outcome": ".claude/docs/ contains a document (e.g., ai-contract-generation.md) that: (1) references the NX generator at configs/nx-plugin/src/generators/contract/, (2) describes when to use AI to draft contract.ts and types.ts for new packages, (3) is indexed in CLAUDE.md. Minimum 200 words of substantive content.",
+      "recommended_learning": "When creating a new contract package, after running the NX generator, give Claude the generated scaffold + one existing similar contract (e.g., packages/contract/dapp-connector/src/contract.ts) + the consuming module. Ask it to draft the contract.ts with typed interfaces matching ADR-09 naming and ADR-10 type discriminator conventions. Review: does it follow the augmentations.ts pattern? Are store slice types correct?",
+      "kb_ref": "ts_contract_generation",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific to lace-platform's contract architecture. Measurable: document existence, word count, CLAUDE.md indexing. Actionable: single document, clear scope. Readiness is Practiced, adoption is Partial — start_now is correct type."
+    },
+    {
+      "id": "rec-lp-state-debug",
+      "title": "Add .claude/docs/state-debugging.md documenting the store/slice/side-effects pattern and common state flow issues for AI-assisted debugging",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-lp-ts_debug_state",
+      "measurable_outcome": ".claude/docs/state-debugging.md exists and is indexed in CLAUDE.md. Contains: (1) the store/slice/side-effects architecture pattern, (2) at least 2 examples of resolved state bugs with root cause analysis (areKeysAvailable$ timing from PR #1772, Redux churn from PR #1802 are candidates), (3) guidance for AI agents on how to trace state flows across contract/module boundaries.",
+      "recommended_learning": "Take the two recent state bugs: (1) PR #1772 — dust wallet areKeysAvailable$ timing issue, (2) PR #1802 — Redux state$ throttling for Midnight sync. For each, document: the symptom, the state flow path (which slice -> which side-effect -> which observable), the root cause, and the fix. Then describe how to give Claude these context documents when debugging a new state issue. This creates reusable debugging context for the team.",
+      "kb_ref": "ts_debug_state",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Cites specific recent bugs. Measurable: document existence, indexing, content requirements. Actionable: document creation based on existing PR knowledge. Readiness is Practiced, Adoption is Partial — start_now is correct."
+    },
+    {
+      "id": "rec-lp-ui-tests",
+      "title": "Generate vitest unit tests for 5 UI toolkit components in packages/lib/ui-toolkit that have Storybook stories but no corresponding test files",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-lp-ts_component_test_gen",
+      "measurable_outcome": "At least 5 new .test.tsx or .test.ts files in packages/lib/ui-toolkit or packages/lib/ui-extension that did not exist before, each with at least 3 test cases covering component render and props behavior.",
+      "recommended_learning": "Pick one component from packages/lib/ui-toolkit that has a Storybook story in apps/lace-mobile-storybook but no test file. Give Claude: (1) the component source, (2) its props/types, (3) the Storybook story as usage documentation, (4) one existing test from the repo as style reference (e.g., packages/contract/account-management/test/store/slice.test.ts for vitest patterns). Ask it to generate render tests and prop variation tests. Review: are assertions testing behavior, not implementation details?",
+      "kb_ref": "ts_component_test_gen",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Specific: names exact packages and the Storybook-to-test-file gap. Measurable: file count and test case count. Actionable: clear starting point with existing Storybook stories as input."
+    }
+  ],
+  "flags": {
+    "risky_acceleration": [],
+    "adhoc_usage": false
+  },
+  "quadrant": {
+    "ai_potential": "HIGH",
+    "ai_activity": "MEDIUM",
+    "position": "High Potential, Medium Activity — Infrastructure is mature (CLAUDE.md, .claude/ agents/skills/commands, claude.yml GHA, Cursor Bugbot, .mcp.json) but observable AI-attributed development activity is zero in commit history. The team has invested heavily in AI infrastructure without observable attribution in code production."
+  },
+  "kb_nominations": [
+    "Novel pattern: 'AI test generation for rapidly evolving SDK integrations' — observed in Midnight SDK 2.0->3.0 upgrade context. Applies when: major dependency version jump with breaking type changes, high commit velocity in integration packages, existing test infrastructure. Value: HIGH for catching regressions in adapted integration code."
+  ],
+  "mastered_nominations": [],
+  "previous_scan_date": null,
+  "coe_annotations": []
+}

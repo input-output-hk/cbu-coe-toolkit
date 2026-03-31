@@ -1,0 +1,419 @@
+{
+  "schema_version": "6.0",
+  "scan_type": "scoring",
+  "scan_date": "2026-03-31",
+  "agent_model": "claude-opus-4-6",
+  "repo": {
+    "owner": "IntersectMBO",
+    "name": "cardano-ledger",
+    "ecosystem": "haskell",
+    "project": "Cardano Core"
+  },
+  "opportunity_map": [
+    {
+      "id": "opp-ledger-imp-dijkstra",
+      "title": "Generate Imp test suites for the 19 untested Dijkstra STS rules using Conway Imp patterns as templates",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 1,
+      "evidence": "23 Dijkstra Rules modules in eras/dijkstra/impl/src/Cardano/Ledger/Dijkstra/Rules/. Only 4 Imp test files in testlib Imp/ (UtxowSpec, CertSpec, UtxoSpec, LedgerSpec). Conway has 13 Imp specs as templates. Dijkstra Rules is highest-churn area (19 changes in last 100 commits).",
+      "kb_pattern": "hs_imp_test_generation",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "Conway has 13 Imp specs. Dijkstra coverage in early stages."}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "All citations verified. Specific to this repo. Conway templates exist. Dijkstra is highest-churn area."
+    },
+    {
+      "id": "opp-ledger-claude-md",
+      "title": "Create a substantive CLAUDE.md covering ledger architecture, era boundaries, STS framework, security-critical paths, and build commands",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 2,
+      "evidence": "CLAUDE.md absent. 2 AI-attributed commits (b566f359, d20b44d3). PR #5670 adds Claude Code skill (.claude/skills/update-changelogs/). 28 cabal packages, 9 eras, nix builds.",
+      "kb_pattern": "cc_claude_md_context",
+      "seen_in": [{"repo": "input-output-hk/lace-platform", "outcome": "comprehensive CLAUDE.md"}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "CLAUDE.md absence verified. AI adoption growing. Repo complexity makes this genuinely high-value."
+    },
+    {
+      "id": "opp-ledger-aiignore",
+      "title": "Create .aiignore to protect consensus rules, cryptographic paths, and era transition logic from unreviewed AI modifications",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 3,
+      "evidence": ".aiignore absent. TPraos rules at libs/cardano-protocol-tpraos/src/Cardano/Protocol/TPraos/Rules/ (OCert, Overlay, Prtcl, Tickn, Updn). STS rules per era. Core ledger paths. AI commits touch CDDL/test files across eras.",
+      "kb_pattern": "cc_aiignore_boundaries",
+      "seen_in": [],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Paths verified. Security-critical nature confirmed. AI already active in adjacent areas."
+    },
+    {
+      "id": "opp-ledger-haddock",
+      "title": "Generate Haddock documentation for undocumented exported modules in Conway and Dijkstra eras",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": 4,
+      "evidence": "Sampled Conway files: PParams.hs (7/1343 lines), Genesis.hs (0/111), BlockBody.hs (0/16), Translation.hs (0/190), TxOut.hs (0/81). Sub-1% density. gh-pages.yml deploys Haddock.",
+      "kb_pattern": "hs_haddock_generation",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "Sub-1% Haddock coverage in sampled era modules"}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Haddock density verified (worse than claimed). Specific modules named. Haddock infra deployed."
+    },
+    {
+      "id": "opp-ledger-agda-conformance",
+      "title": "Use AI to identify divergence points between Agda formal spec and Dijkstra Haskell implementation for conformance test expansion",
+      "value": "HIGH",
+      "effort": "Medium",
+      "roi_rank": 5,
+      "evidence": "formal-ledger-specifications pinned in cabal.project (tag 6158038b). libs/cardano-ledger-conformance/ with Conway conformance (Imp/Conway/, Spec/Conway/, ExecSpecRule/ with 14+ modules). No Dijkstra conformance directory.",
+      "kb_pattern": "hs_agda_conformance",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "Complete Agda formal spec for Conway, partial for earlier eras."}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "Conformance gap for Dijkstra verified. Conway conformance exists as template."
+    },
+    {
+      "id": "opp-ledger-constrained-gen",
+      "title": "Use AI to write constrained generators for new Dijkstra data types, using existing Conway generators as reference",
+      "value": "HIGH",
+      "effort": "Medium",
+      "roi_rank": 6,
+      "evidence": "constrained-generators pinned in cabal.project. AI commits for plutusScriptGen confirmed. Dijkstra Sub* modules verified (10 Sub* rule files). Conway testlib exists as reference.",
+      "kb_pattern": "hs_constrained_generators",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "2 AI-attributed commits added plutusScriptGen"}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "AI precedent for generator work verified. Sub* modules are Dijkstra-specific."
+    },
+    {
+      "id": "opp-ledger-era-transition-docs",
+      "title": "Use AI to generate Dijkstra era transition documentation from Conway-to-Dijkstra diff and NewEra.md guide",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": 7,
+      "evidence": "docs/NewEra.md confirmed. eras/dijkstra/impl/src/Cardano/Ledger/Dijkstra/Translation.hs confirmed. Dijkstra is highest-churn era.",
+      "kb_pattern": "hs_era_transition_docs",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "docs/NewEra.md exists. Dijkstra actively developed."}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "NewEra.md verified. Dijkstra Translation.hs verified. Specific audit task is concrete."
+    },
+    {
+      "id": "opp-ledger-cddl-conformance",
+      "title": "Use AI to identify untested CDDL schema variants in Dijkstra era CddlSpec, particularly for new Sub* rule serialization",
+      "value": "MEDIUM",
+      "effort": "Medium",
+      "roi_rank": 8,
+      "evidence": "8 CDDL files (one per era including dijkstra.cddl). AI commits fixed CDDL test generation. 6 xdescribe'd test groups in Dijkstra CddlSpec.",
+      "kb_pattern": "hs_cddl_conformance",
+      "seen_in": [{"repo": "IntersectMBO/cardano-ledger", "outcome": "CddlSpec.hs covers main types, some variants untested"}],
+      "adversarial_status": "approved",
+      "adversarial_reason": "CDDL infra verified. AI already worked in this area. Sub* modules are Dijkstra-specific."
+    },
+    {
+      "id": "opp-ledger-corner-cases",
+      "title": "Use AI to discover untested corner cases in Dijkstra era constrained generators",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "Near-duplicate of opp-ledger-constrained-gen.",
+      "kb_pattern": "hs_quickcheck_corner_cases",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: Near-duplicate of constrained-gen opportunity. No specific invariant gaps named. Generic enough to apply to any property-testing codebase."
+    },
+    {
+      "id": "opp-ledger-debug-sts",
+      "title": "Use AI for state transition debugging in Dijkstra STS rules",
+      "value": "HIGH",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "Activity description, not an opportunity.",
+      "kb_pattern": "hs_debug_state_transitions",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: No specific bugs, debugging scenarios, or known spec divergence named. A team would ask 'debug what?'"
+    },
+    {
+      "id": "opp-ledger-cross-era-review",
+      "title": "Use AI to review PRs that modify STS rules across multiple eras",
+      "value": "MEDIUM",
+      "effort": "Low",
+      "roi_rank": null,
+      "evidence": "Generic AI code review suggestion.",
+      "kb_pattern": "hs_cross_era_review",
+      "seen_in": [],
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage A: No analysis of what AI review would catch that 5+ human reviewers and CI do not. PR template already has CDDL checklist."
+    }
+  ],
+  "adoption_state": [
+    {
+      "opportunity_id": "opp-ledger-imp-dijkstra",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in Imp test files. No AI config referencing test generation. No observable AI attribution found — this does not confirm absence of AI use."
+    },
+    {
+      "opportunity_id": "opp-ledger-claude-md",
+      "state": "Absent",
+      "evidence": "CLAUDE.md does not exist. The opportunity is to create it."
+    },
+    {
+      "opportunity_id": "opp-ledger-aiignore",
+      "state": "Absent",
+      "evidence": ".aiignore does not exist. The opportunity is to create it."
+    },
+    {
+      "opportunity_id": "opp-ledger-haddock",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in documentation files. No observable AI attribution found — this does not confirm absence of AI use."
+    },
+    {
+      "opportunity_id": "opp-ledger-agda-conformance",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in conformance test files. No observable AI attribution found."
+    },
+    {
+      "opportunity_id": "opp-ledger-constrained-gen",
+      "state": "Partial",
+      "evidence": "2 Claude co-authored commits (b566f359, d20b44d3, 2026-03-16) added plutusScriptGen for CDDL test generation — related generator authoring but not systematic constrained-generator usage."
+    },
+    {
+      "opportunity_id": "opp-ledger-era-transition-docs",
+      "state": "Absent",
+      "evidence": "No AI-attributed commits in docs/ or Translation.hs modules. No observable AI attribution found."
+    },
+    {
+      "opportunity_id": "opp-ledger-cddl-conformance",
+      "state": "Partial",
+      "evidence": "2 Claude co-authored commits (b566f359, d20b44d3) specifically fixed CDDL test generation issues — AI has been used in this exact area but not systematically."
+    }
+  ],
+  "readiness": [
+    {
+      "opportunity_id": "opp-ledger-imp-dijkstra",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Imp test framework available for target era", "result": "YES", "confidence": "HIGH", "evidence": "testlib/Test/Cardano/Ledger/Dijkstra/Imp/ exists with 4 Spec files"},
+        {"criterion": "STS rule module exists to test", "result": "YES", "confidence": "HIGH", "evidence": "23 Rules modules in eras/dijkstra/impl/src/Cardano/Ledger/Dijkstra/Rules/"},
+        {"criterion": "Era test infrastructure builds", "result": "YES", "confidence": "HIGH", "evidence": "dijkstra/impl in cabal.project packages; CI builds across 5 GHC versions"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-claude-md",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "AI tool in use or planned", "result": "YES", "confidence": "HIGH", "evidence": "2 Claude co-authored commits + .claude/skills/update-changelogs/ skill added via PR #5670"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-aiignore",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Security-critical paths identifiable in file tree", "result": "YES", "confidence": "HIGH", "evidence": "TPraos rules (5 modules), STS rules per era, core ledger paths clearly identified"},
+        {"criterion": "AI tools in active use", "result": "YES", "confidence": "HIGH", "evidence": "2 AI-attributed commits + Claude Code skill in repo"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-haddock",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Haddock tooling configured", "result": "YES", "confidence": "HIGH", "evidence": "gh-pages.yml deploys Haddock; cabal haddock works via nix"},
+        {"criterion": "Module exports are explicit", "result": "YES", "confidence": "MEDIUM", "evidence": "Sampled modules use explicit export lists (Semi-objective assessment)"},
+        {"criterion": "At least some existing Haddock as style reference", "result": "YES", "confidence": "MEDIUM", "evidence": "PParams.hs has 7 substantive doc comments; Core.hs has 18+ doc comments"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-agda-conformance",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Formal spec exists and is extractable", "result": "YES", "confidence": "HIGH", "evidence": "source-repository-package in cabal.project: formal-ledger-specifications (tag 6158038b)"},
+        {"criterion": "Conformance bridge exists", "result": "YES", "confidence": "HIGH", "evidence": "libs/cardano-ledger-conformance/ with ExecSpecRule modules per STS rule"},
+        {"criterion": "CI runs conformance tests", "result": "YES", "confidence": "HIGH", "evidence": "cardano-ledger-conformance in cabal.project packages; haskell.yml CI triggers cabal test"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-constrained-gen",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "constrained-generators library available", "result": "YES", "confidence": "HIGH", "evidence": "Pinned in cabal.project as source-repository-package"},
+        {"criterion": "Existing generators as reference", "result": "YES", "confidence": "HIGH", "evidence": "Dijkstra Arbitrary.hs (314 lines) with instances for Sub* types; Conway testlib generators exist"},
+        {"criterion": "Data type invariants documented or in formal spec", "result": "YES", "confidence": "MEDIUM", "evidence": "formal-ledger-specifications pinned; inline spec comments in rule modules"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-era-transition-docs",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "Era transition guide exists", "result": "YES", "confidence": "HIGH", "evidence": "docs/NewEra.md with detailed transition checklist"},
+        {"criterion": "Previous era transition modules exist as reference", "result": "YES", "confidence": "HIGH", "evidence": "Translation.hs in allegra, babbage, conway, dijkstra, mary eras"}
+      ]
+    },
+    {
+      "opportunity_id": "opp-ledger-cddl-conformance",
+      "level": "Practiced",
+      "criteria_results": [
+        {"criterion": "CDDL or schema files exist", "result": "YES", "confidence": "HIGH", "evidence": "8 .cddl files (one per era) at eras/*/impl/cddl/data/*.cddl"},
+        {"criterion": "Conformance tests exist", "result": "YES", "confidence": "HIGH", "evidence": "CddlSpec.hs per era; HuddleSpec.hs per era"},
+        {"criterion": "Serialization modules identifiable", "result": "YES", "confidence": "HIGH", "evidence": "ToCBOR/FromCBOR instances throughout; EncCBOR/DecCBOR in era modules"}
+      ]
+    }
+  ],
+  "risk_surface": [
+    {
+      "path": "libs/cardano-protocol-tpraos/src/Cardano/Protocol/TPraos/Rules/",
+      "detection_difficulty": "LOW",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Consensus rules (OCert, Overlay, Prtcl, Tickn, Updn). No AI-attributed commits in this path. Heavy testing via property tests.",
+      "intersecting_opportunities": ["opp-ledger-aiignore"]
+    },
+    {
+      "path": "eras/*/impl/src/Cardano/Ledger/*/Rules/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "STS rules per era — financial state transitions, consensus-critical. Property tests + Imp tests cover main paths but edge cases possible. No AI-attributed commits in rule implementation files.",
+      "intersecting_opportunities": ["opp-ledger-imp-dijkstra", "opp-ledger-aiignore", "opp-ledger-agda-conformance"]
+    },
+    {
+      "path": "libs/cardano-ledger-core/src/Cardano/Ledger/",
+      "detection_difficulty": "MEDIUM",
+      "blast_radius": "HIGH",
+      "ai_exposure": "none",
+      "evidence": "Core ledger state and types. High fan-in (imported by all era packages). No AI-attributed commits.",
+      "intersecting_opportunities": ["opp-ledger-haddock", "opp-ledger-aiignore"]
+    },
+    {
+      "path": "eras/*/impl/cddl/ + HuddleSpec.hs + CddlSpec.hs",
+      "detection_difficulty": "LOW",
+      "blast_radius": "MEDIUM",
+      "ai_exposure": "confirmed",
+      "evidence": "CDDL specs and test generators. AI exposure confirmed: commits b566f359 and d20b44d3 modified HuddleSpec.hs across alonzo, babbage, conway, shelley, core, and dijkstra. CddlSpec.hs also modified. Tests verify serialization conformance — errors caught by CI.",
+      "intersecting_opportunities": ["opp-ledger-cddl-conformance"]
+    },
+    {
+      "path": "libs/cardano-ledger-conformance/",
+      "detection_difficulty": "LOW",
+      "blast_radius": "MEDIUM",
+      "ai_exposure": "none",
+      "evidence": "Conformance bridge between Agda spec and Haskell implementation. Conway conformance complete. No AI-attributed commits.",
+      "intersecting_opportunities": ["opp-ledger-agda-conformance"]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-ledger-imp-dijkstra",
+      "title": "Generate Imp test suites for 19 untested Dijkstra STS rules, starting with SubGov and SubUtxo",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-imp-dijkstra",
+      "measurable_outcome": "eras/dijkstra/impl/testlib/Test/Cardano/Ledger/Dijkstra/Imp/ contains ≥8 *Spec.hs files (doubling current 4) covering SubGovSpec, SubUtxoSpec, GovSpec, GovCertSpec, CertsSpec, BbodySpec, UtxosSpec, and EpochSpec",
+      "recommended_learning": "Pick SubGovSpec as first target. Give Claude the Conway GovSpec.hs from eras/conway/impl/testlib/Test/Cardano/Ledger/Conway/Imp/GovSpec.hs as template + Dijkstra SubGov.hs rule module. Ask: 'Generate an Imp test suite following Conway patterns.' Verify generated tests exercise preconditions and postconditions.",
+      "kb_ref": "hs_imp_test_generation",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: All citations verified. Measurable outcome binary and verifiable. Conway template path confirmed."
+    },
+    {
+      "id": "rec-ledger-claude-md",
+      "title": "Write CLAUDE.md covering 28-package architecture, era boundaries, STS framework, nix build commands, and security-critical paths",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-claude-md",
+      "measurable_outcome": "CLAUDE.md exists at repo root with ≥200 words covering: (1) multi-era architecture + package map, (2) STS framework overview, (3) cabal + nix build commands, (4) security-critical paths, (5) testing strategy, (6) coding conventions",
+      "recommended_learning": "Use .claude/skills/update-changelogs/SKILL.md as reference for Claude Code integration style. Start with one paragraph per category. Reference docs/NewEra.md for architecture, CONTRIBUTING.md for workflow, cabal.project packages list for module boundaries.",
+      "kb_ref": "cc_claude_md_context",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: CLAUDE.md absence verified. Measurable outcome binary. Low effort, high leverage."
+    },
+    {
+      "id": "rec-ledger-aiignore",
+      "title": "Create .aiignore listing consensus rules (TPraos), core STS rules per era, and serialization-critical CDDL definitions",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-aiignore",
+      "measurable_outcome": ".aiignore exists at repo root listing ≥5 paths including libs/cardano-protocol-tpraos/src/Cardano/Protocol/TPraos/Rules/, eras/*/impl/src/Cardano/Ledger/*/Rules/, libs/cardano-ledger-core/src/Cardano/Ledger/Core/, eras/*/impl/cddl/data/*.cddl, and libs/small-steps/",
+      "recommended_learning": "Review with the ledger security lead. Start with consensus paths (TPraos) and STS rule implementations. Use .gitignore syntax. Note: .aiignore should mark paths as review-required, not blocked — AI can still assist with understanding, just not unreviewed modifications.",
+      "kb_ref": "cc_aiignore_boundaries",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: All paths verified. Measurable outcome binary."
+    },
+    {
+      "id": "rec-ledger-agda-conformance",
+      "title": "Extend conformance testing to Dijkstra era by using AI to identify spec-implementation divergence in Sub* rules",
+      "type": "start_now",
+      "effort": "Medium",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-agda-conformance",
+      "measurable_outcome": "libs/cardano-ledger-conformance/test/Test/Cardano/Ledger/Conformance/ contains a Dijkstra/ subdirectory with ≥1 conformance test module bridging Agda-extracted spec to Dijkstra implementation",
+      "recommended_learning": "Study libs/cardano-ledger-conformance/test/Test/Cardano/Ledger/Conformance/Imp/Conway/ as reference. Give Claude the Conway conformance module + Dijkstra rule module + relevant Agda spec extract. Ask: 'Where does Dijkstra diverge from the formal spec?'",
+      "kb_ref": "hs_agda_conformance",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: Conway conformance infrastructure confirmed (14+ modules). No Dijkstra conformance exists. Measurable outcome binary."
+    },
+    {
+      "id": "rec-ledger-era-transition-docs",
+      "title": "Use AI to audit Dijkstra era completeness against NewEra.md checklist and generate missing transition documentation",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-ledger-era-transition-docs",
+      "measurable_outcome": "docs/ contains a Dijkstra-specific transition status document or docs/NewEra.md is updated with a Dijkstra completion checklist showing which steps are done and which remain",
+      "recommended_learning": "Give Claude docs/NewEra.md + eras/dijkstra/impl/ file listing + eras/conway/impl/ file listing. Ask: 'Comparing Dijkstra to the NewEra.md checklist and Conway, what is missing in Dijkstra?' Review against team roadmap.",
+      "kb_ref": "hs_era_transition_docs",
+      "adversarial_status": "approved",
+      "adversarial_reason": "Stage B: NewEra.md confirmed. Dijkstra Translation.hs confirmed. Measurable outcome verifiable."
+    },
+    {
+      "id": "rec-ledger-haddock",
+      "title": "Generate Haddock docs for Conway and Dijkstra exported modules, starting with high-fan-in modules in cardano-ledger-core",
+      "type": "start_now",
+      "effort": "Low",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-haddock",
+      "measurable_outcome": "10 specified modules with currently 0 Haddock comments (Conway/Translation.hs, Conway/TxOut.hs, Conway/BlockBody.hs, Conway/Genesis.hs, and 6 equivalent Dijkstra modules) each have ≥5 Haddock doc comments on exported functions",
+      "recommended_learning": "Pick libs/cardano-ledger-core/src/Cardano/Ledger/Core.hs (highest fan-in). Give Claude the module + 2-3 importing modules for usage context. Ask: 'Draft Haddock comments for all exported functions.' Review for domain accuracy.",
+      "kb_ref": "hs_haddock_generation",
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage B: Original measurable outcome too weak — some modules already pass. Revised to target modules with 0 current comments. Re-submitting with fixed outcome for record."
+    },
+    {
+      "id": "rec-ledger-constrained-gen",
+      "title": "Systematize AI-assisted constrained generator authoring for Dijkstra Sub* data types",
+      "type": "start_now",
+      "effort": "Medium",
+      "impact": "HIGH",
+      "opportunity_id": "opp-ledger-constrained-gen",
+      "measurable_outcome": "eras/dijkstra/impl/testlib/ contains ≥3 new generator modules covering Sub* data types",
+      "recommended_learning": "Follow the proven plutusScriptGen pattern from commits b566f359/d20b44d3.",
+      "kb_ref": "hs_constrained_generators",
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage B: Dijkstra Arbitrary.hs already contains instances for all 10 Sub* types. Measurable outcome factually incorrect. Type mismatch: start_now invalid for Adoption=Partial."
+    },
+    {
+      "id": "rec-ledger-cddl-expand",
+      "title": "Expand Dijkstra CDDL test coverage to Sub* rule serialization variants",
+      "type": "start_now",
+      "effort": "Medium",
+      "impact": "MEDIUM",
+      "opportunity_id": "opp-ledger-cddl-conformance",
+      "measurable_outcome": "eras/dijkstra/impl/test/Test/Cardano/Ledger/Dijkstra/Binary/CddlSpec.hs has ≥5 additional test cases",
+      "recommended_learning": "Give Claude dijkstra.cddl + CddlSpec.hs + HuddleSpec.hs. Ask: 'Which CDDL alternatives are not covered?'",
+      "kb_ref": "hs_cddl_conformance",
+      "adversarial_status": "rejected",
+      "adversarial_reason": "Stage B: Real gap is 6 xdescribe'd test groups, not missing schema branches. Measurable outcome ambiguous. Type mismatch: start_now invalid for Adoption=Partial."
+    }
+  ],
+  "flags": {
+    "risky_acceleration": [],
+    "adhoc_usage": false
+  },
+  "quadrant": {
+    "ai_potential": "HIGH",
+    "ai_activity": "LOW",
+    "position": "High potential, low activity — prime candidate for guided AI adoption"
+  },
+  "kb_nominations": [],
+  "mastered_nominations": [],
+  "previous_scan_date": null,
+  "coe_annotations": []
+}
