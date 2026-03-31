@@ -33,7 +33,7 @@ Collect all of the following before any assessment begins. Do not assess while c
 |------|--------|-------|
 | File tree (full) | GitHub API: repo contents / git ls-tree | Needed for: module structure, test directories, config files, documentation density |
 | Key file contents | GitHub API: file contents | Read: README.md, CLAUDE.md, CONTRIBUTING.md, .aiignore, CI workflow files, package manifests, AI config files (.cursorrules, .mcp.json, AGENTS.md, copilot-instructions.md). If a file doesn't exist, record its absence — that's data too. |
-| Git history summary | GitHub API: commits (last 100, or last 90 days — whichever yields more data) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency. The 90-day window aligns with the Adoption State analysis window (Section 3.1). |
+| Git history summary | GitHub API: commits (last 100 commits OR last 90 days, whichever yields more) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency. **This defines the "analysis set" — all subsequent sections (churn, adoption, risk) operate on this exact set of commits.** |
 | High-churn modules | Derived from git history | For each of the last 100 commits, collect the immediate parent directory of each changed file (strip trailing filename, keep the path — e.g., `src/foo/bar.ts` → `src/foo`). Deduplicate directories within each commit. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. Exclude files at repo root (no parent directory). Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`. |
 | PR data | GitHub API: PRs (last 30 merged) | Extract: review counts, CI check status, AI bot activity, PR descriptions |
 | CI configuration | Workflow YAML files | Extract: test steps, linter steps, security scanning, AI tools in CI |
@@ -151,7 +151,7 @@ For each approved opportunity, assess readiness using **KB criteria only**.
 | ⬜ Undiscovered | <50% of criteria met |
 | 🟡 Exploring | 50-74% of criteria met |
 | 🟢 Practiced | ≥75% of criteria met |
-| 💎 Mastered | Agent cannot assign. Flag as candidate if 100% met + practices well-documented. CoE confirms. In `assessment.json`, set level to `"Practiced"` and add the opportunity ID to the `mastered_nominations` array with a reason string. |
+| 💎 Mastered | Agent cannot assign. Flag as candidate if 100% met + practices well-documented. CoE confirms. In `assessment.json`, set level to `"Practiced"` and add to `mastered_nominations`: `{"opportunity_id": "<id>", "reason": "<why this qualifies>"}`. |
 
 **If KB has no readiness criteria for this use-case type:** Mark readiness as **Not Assessable**. Record reason: "No KB criteria for use-case type: {type}." The opportunity still appears in the report with Adoption State and in Recommendations. It is excluded from Quadrant computation.
 
