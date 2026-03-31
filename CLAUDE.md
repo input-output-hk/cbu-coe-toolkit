@@ -13,12 +13,17 @@
 
 ```
 cbu-coe-toolkit/
-├── kb/                            # AAMM v5 Knowledge Base (live)
-│   ├── ecosystems/                # Per-language patterns
-│   ├── cross-cutting.md           # Universal patterns
-│   └── anti-patterns.md           # What doesn't work
 ├── models/                        # Model definitions
 │   ├── config.yaml                # Tracked repos (29 repos, 4 orgs)
+│   ├── ai-augmentation-maturity/  # AAMM — full model home
+│   │   ├── README.md              # What, how, scope, how to trigger
+│   │   ├── scoring-model.md       # Operational manual for scanner agent (source of truth at runtime)
+│   │   ├── spec.md                # Architecture + design rationale (for humans)
+│   │   ├── changelog.md           # Model evolution
+│   │   └── knowledge-base/        # Opportunity patterns + readiness criteria per ecosystem
+│   │       ├── ecosystems/        # Per-language patterns (haskell, typescript, rust, python)
+│   │       ├── cross-cutting.md   # Universal patterns
+│   │       └── anti-patterns.md   # What doesn't work
 │   ├── engineering-vitals/        # KPIs, thresholds (Power BI external)
 │   └── capability-maturity/       # Engineering practices (draft)
 ├── scans/ai-augmentation/         # Scan config + results
@@ -26,7 +31,7 @@ cbu-coe-toolkit/
 ├── notion/                        # Page registry, publishing guide
 └── docs/
     ├── decisions/                 # Architecture Decision Records
-    ├── superpowers/specs/         # Design specs
+    ├── superpowers/               # Design specs + implementation plans
     └── learnings.md               # Operational insights log
 ```
 
@@ -34,48 +39,62 @@ cbu-coe-toolkit/
 
 | Model | Question | Location |
 |---|---|---|
-| **AI Augmentation (AAMM)** | Is AI institutionalised? | `kb/`, `.claude/skills/scan-aamm-v5/`, `docs/superpowers/specs/2026-03-27-aamm-v5-spec.md` |
+| **AI Augmentation (AAMM)** | Where can AI add the most value, and what to do next? | `models/ai-augmentation-maturity/` |
 | **Capability Maturity** | Are engineering practices solid? | `models/capability-maturity/` (draft) |
 | **Engineering Vitals** | Is work delivering value? | Power BI (external) |
 
 Design principles:
 - **AAMM is a consultation, not a score.** It tells teams where they are and what to do next with highest ROI.
-- Stages are **informative**, not judgment. The goal is showing teams what good looks like.
+- **Does not judge teams** — informs and recommends.
 - **Measure outcomes, not mechanisms.** Score what matters, not which tool is used. See ADR-011.
-- **Adversarial review is mandatory (ADR-012).** Nothing gets published without skeptical review.
+- **Adversarial review is mandatory (ADR-012).** Two stages: opportunity map + recommendations.
+- **Report is official at completion.** CoE challenges post-publication, not pre-publication.
 
-## AAMM v5
+## AAMM v6
 
-AAMM v5 uses a single AI agent (not a bash pipeline) to assess repos. See ADR-018.
+AAMM v6 uses a single AI agent with KB-driven, per-use-case assessment. See ADR-019 (supersedes ADR-018).
+
+**Separation of concerns:**
+- `spec.md` = design rationale (for humans)
+- `scoring-model.md` = operational manual (for agents — read this at scan time)
 
 **Key files:**
-- `docs/superpowers/specs/2026-03-27-aamm-v5-spec.md` — v5 spec (authoritative)
-- `.claude/skills/scan-aamm-v5/SKILL.md` — scan skill (invoke with `/scan-aamm-v5`)
-- `kb/` — Knowledge Base (live, enriched after each scan)
+- `models/ai-augmentation-maturity/scoring-model.md` — **read first at scan time**
+- `models/ai-augmentation-maturity/knowledge-base/` — opportunity patterns + readiness criteria
+- `models/ai-augmentation-maturity/spec.md` — architecture + edge cases
 - `models/config.yaml` — tracked repo list (29 repos, 4 orgs)
-- `scans/ai-augmentation/config.yaml` — scan configuration
 
 **Read order for agents:**
-1. v5 spec — understand rubric + depth methodology
-2. KB files for target ecosystem — patterns and anti-patterns
+1. `scoring-model.md` — step-by-step operational manual
+2. KB files for target ecosystem — opportunity patterns + readiness criteria
 3. `models/config.yaml` — which repos to scan
 
-## Scan flow (v5)
+## Scan flow (v6)
 
 ```
-/scan-aamm-v5 owner/repo
-  → Load KB + config                    # Agent reads ecosystem patterns
-  → Collect repo data via GitHub API     # Tree, PRs, commits, key files
-  → Rubric assessment (5 pillars, 5 zones)  # Structured criteria, YES/NO
-  → Depth assessment                     # Read files, produce grounded findings
-  → Draft recommendations               # 5-7, ROI-prioritized
-  → Adversarial review (separate agent)  # Spot-check rubric + challenge recs
-  → Generate report (3 files)            # report.md, assessment.json, detailed-log.md
+/scan-aamm-v6 owner/repo
+  → Load scoring-model.md + KB          # Agent reads operational manual + ecosystem patterns
+  → Collect repo data via GitHub API     # Tree, commits, PRs, key files, churn
+  → Generate Opportunity Map             # KB patterns matched to repo evidence, ROI-ordered
+  → Adversarial Review — Stage A         # Separate agent filters platitudes
+  → Assess per opportunity               # Adoption State, Readiness (KB criteria), Risk Surface
+  → Generate Recommendations             # ROI-ordered, with recommended learning
+  → Adversarial Review — Stage B         # Separate agent challenges recommendations
+  → Generate report (3 files)            # report.md, assessment.json, detailed-log.md ✓ OFFICIAL
 ```
 
-Non-interactive. No confirmations. Results go to `scans/ai-augmentation/results/YYYY-MM-DD/`.
+Fully autonomous. No confirmations. No mid-scan gates. Report is official at completion.
+Results go to `scans/ai-augmentation/results/YYYY-MM-DD/`.
 
-Tracked repos: 29 across 4 orgs. See `models/config.yaml`.
+## Gemini reviewer
+
+Independent reviewer powered by Gemini 3.1 Pro. Available on-demand and as pre-commit gate.
+
+- `/review-model <file-or-dir>` — on-demand review with scored findings
+- Pre-commit hook on `models/` — blocks commit if score < 9.0
+- GEMINI.md defines persona, perspectives, behavior rules, output format
+- Fail-open: missing CLI or unparseable output → warn, don't block
+- Bypass: `GEMINI_REVIEW=0 git commit` or `--no-verify`
 
 ## Source of truth
 
@@ -86,32 +105,32 @@ Tracked repos: 29 across 4 orgs. See `models/config.yaml`.
 ## Rules
 
 0. **Show the data, challenge yourself, then conclude.**
-   - **Data first:** "It's good" without evidence is an opinion, not an evaluation. Run the numbers, show the distribution, check the evidence, then conclude. If you can't show data, say "I don't have data for this" — don't fill the gap with confidence.
-   - **Second pass:** Before delivering any non-trivial output, ask yourself: "What did I simplify, ignore, or assume? What would a skeptical senior engineer challenge here?" The gap between first draft and second pass is where quality lives.
-   - **Confidence explicit:** When making evaluations or recommendations, state your confidence (HIGH/MEDIUM/LOW) and why. HIGH = concrete evidence. MEDIUM = pattern/heuristic. LOW = inference/absence. Don't present LOW confidence conclusions with HIGH confidence language.
+   - **Data first:** "It's good" without evidence is an opinion, not an evaluation.
+   - **Second pass:** "What did I simplify, ignore, or assume? What would a skeptic challenge?"
+   - **Confidence explicit:** HIGH = concrete evidence. MEDIUM = pattern/heuristic. LOW = inference/absence.
 1. **Never commit to `main`.** Branch → PR → owner review → merge.
-2. **Never expose secrets.** No printing, logging, or committing API keys, tokens, passwords, or env variable values. Reference by name only (`$GITHUB_TOKEN`).
+2. **Never expose secrets.** Reference by name only (`$GITHUB_TOKEN`).
 3. **Check for secrets before every commit.** Run `git diff --cached` and review every line.
 4. **Quality gate = Rule 0.** Show data, challenge yourself, state confidence.
 5. **Read `backlog.md` first (if it exists).** Local working doc (gitignored).
-6. **Read v5 spec before scanning.** Load spec → KB → config → then scan.
-7. **Use `.claude/skills/scan-aamm-v5/`** for scans. Target repo from `models/config.yaml` or manual input.
-8. **Results as JSON + MD** to `scans/*/results/YYYY-MM-DD/`.
-9. **Never publish to Notion without human approval.**
-10. **Model definitions are mutable drafts.** Flag edge cases and inconsistencies.
-11. **PRs explain why**, not just what.
-12. **When unsure, ask.**
-13. **Adversarial review before publishing (ADR-012).** Every scan result gets a skeptical reviewer agent. The default is circumspect — assume the assessment is wrong until challenged and confirmed.
-14. **Don't patch broken architecture.** When a bug reveals a design flaw, stop. Audit the full affected area. Fix the design, then the implementation.
+6. **Read scoring-model.md before scanning.** Load `scoring-model.md` → KB → config → then scan.
+7. **Results as JSON + MD** to `scans/*/results/YYYY-MM-DD/`.
+8. **Never publish to Notion without human approval.**
+9. **Model definitions are mutable drafts.** Flag edge cases and inconsistencies.
+10. **PRs explain why**, not just what.
+11. **When unsure, ask.**
+12. **Adversarial review is two-stage (ADR-012 + ADR-019).** Stage A on opportunity map, Stage B on recommendations. Both mandatory.
+13. **Don't patch broken architecture.** When a bug reveals a design flaw, stop. Audit. Fix the design, then the implementation.
 
 ## Sync protocol
 
 When changing AAMM assessment logic, update ALL of these in the same session:
-1. **Spec** (`docs/superpowers/specs/2026-03-27-aamm-v5-spec.md`) — the rules
-2. **Scanner prompt** (`.claude/skills/scan-aamm-v5/prompts/scanner-system.md`) — rubric tables
-3. **This file** (CLAUDE.md) — if the change affects how agents use the model
-4. **ADR** (`docs/decisions/`) — if the change is a significant design decision
-5. **KB** (`kb/`) — if the change affects patterns or anti-patterns
+1. **Scoring model** (`models/ai-augmentation-maturity/scoring-model.md`) — operational rules
+2. **Spec** (`models/ai-augmentation-maturity/spec.md`) — if architectural decision
+3. **Changelog** (`models/ai-augmentation-maturity/changelog.md`) — version the change
+4. **This file** (CLAUDE.md) — if the change affects how agents navigate the model
+5. **ADR** (`docs/decisions/`) — if significant design decision
+6. **KB** (`models/ai-augmentation-maturity/knowledge-base/`) — if it affects patterns or criteria
 
 A change in one without the others is a bug.
 
