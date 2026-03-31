@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AAMM v6 Assessment",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scan_type",
+    "scan_date",
+    "repo",
+    "opportunity_map",
+    "adoption_state",
+    "readiness",
+    "risk_surface",
+    "recommendations",
+    "flags",
+    "quadrant"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "6.0" },
+    "scan_type": { "type": "string", "enum": ["scoring", "learning"] },
+    "scan_date": { "type": "string", "format": "date" },
+    "agent_model": { "type": "string" },
+    "repo": {
+      "type": "object",
+      "required": ["owner", "name", "ecosystem"],
+      "properties": {
+        "owner": { "type": "string" },
+        "name": { "type": "string" },
+        "ecosystem": { "type": "string" },
+        "project": { "type": "string" }
+      }
+    },
+    "opportunity_map": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/opportunity" }
+    },
+    "adoption_state": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adoption_entry" }
+    },
+    "readiness": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/readiness_entry" }
+    },
+    "risk_surface": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/risk_entry" }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/recommendation" }
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "risky_acceleration": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Opportunity IDs with Active adoption + Undiscovered readiness"
+        },
+        "adhoc_usage": {
+          "type": "boolean",
+          "description": "True if AI activity detected without intentionality signals"
+        }
+      }
+    },
+    "quadrant": {
+      "type": "object",
+      "required": ["ai_potential", "ai_activity", "position"],
+      "properties": {
+        "ai_potential": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "ai_activity": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "position": { "type": "string" }
+      }
+    },
+    "kb_nominations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "New KB patterns proposed from this scan"
+    },
+    "mastered_nominations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "opportunity_id": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      },
+      "description": "Opportunities flagged as Mastered candidates for CoE confirmation"
+    },
+    "previous_scan_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date of previous scan used for delta, or null if first scan"
+    },
+    "coe_annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": { "type": "string", "description": "What is being challenged (opportunity ID, recommendation ID, risk path)" },
+          "challenge": { "type": "string" },
+          "rationale": { "type": "string" },
+          "recorded_by": { "type": "string" },
+          "recorded_date": { "type": "string", "format": "date" }
+        }
+      },
+      "description": "Post-publication CoE challenges"
+    }
+  },
+  "$defs": {
+    "opportunity": {
+      "type": "object",
+      "required": ["id", "title", "value", "effort", "roi_rank", "evidence", "adversarial_status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "value": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "effort": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "roi_rank": { "type": "integer", "minimum": 1 },
+        "evidence": { "type": "string" },
+        "kb_pattern": { "type": ["string", "null"] },
+        "seen_in": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "repo": { "type": "string" },
+              "outcome": { "type": "string" }
+            }
+          }
+        },
+        "adversarial_status": { "type": "string", "enum": ["approved", "rejected"] },
+        "adversarial_reason": { "type": "string" }
+      }
+    },
+    "adoption_entry": {
+      "type": "object",
+      "required": ["opportunity_id", "state", "evidence"],
+      "properties": {
+        "opportunity_id": { "type": "string" },
+        "state": { "type": "string", "enum": ["Active", "Partial", "Absent"] },
+        "evidence": { "type": "string" }
+      }
+    },
+    "readiness_entry": {
+      "type": "object",
+      "required": ["opportunity_id", "level"],
+      "properties": {
+        "opportunity_id": { "type": "string" },
+        "level": { "type": "string", "enum": ["Undiscovered", "Exploring", "Practiced", "Mastered", "Not Assessable"] },
+        "criteria_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterion": { "type": "string" },
+              "result": { "type": "string", "enum": ["YES", "NO"] },
+              "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+              "evidence": { "type": "string" }
+            }
+          }
+        },
+        "risky_acceleration_flag": { "type": "boolean" },
+        "not_assessable_reason": { "type": "string" }
+      }
+    },
+    "risk_entry": {
+      "type": "object",
+      "required": ["path", "detection_difficulty", "blast_radius", "ai_exposure"],
+      "properties": {
+        "path": { "type": "string" },
+        "detection_difficulty": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "blast_radius": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "ai_exposure": { "type": "string", "enum": ["confirmed", "potential", "none"] },
+        "evidence": { "type": "string" },
+        "intersecting_opportunities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Opportunity IDs that would touch this path if adopted (MEDIUM confidence)"
+        }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["id", "title", "type", "effort", "impact", "opportunity_id", "measurable_outcome", "adversarial_status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["start_now", "foundation_first", "fix_the_foundation", "kb_gap"] },
+        "effort": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "impact": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "opportunity_id": { "type": "string" },
+        "measurable_outcome": { "type": "string" },
+        "recommended_learning": { "type": "string" },
+        "kb_ref": { "type": ["string", "null"] },
+        "adversarial_status": { "type": "string", "enum": ["approved", "rejected"] },
+        "adversarial_reason": { "type": "string" },
+        "team_response": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["accepted", "rejected", "deferred", "no_response"] },
+            "rationale": { "type": "string" },
+            "recorded_by": { "type": "string" },
+            "recorded_date": { "type": "string", "format": "date" }
+          }
+        }
+      }
+    }
+  }
+}
