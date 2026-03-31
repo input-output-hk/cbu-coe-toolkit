@@ -33,7 +33,7 @@ Collect all of the following before any assessment begins. Do not assess while c
 |------|--------|-------|
 | File tree (full) | GitHub API: repo contents / git ls-tree | Needed for: module structure, test directories, config files, documentation density |
 | Key file contents | GitHub API: file contents | Read: README.md, CLAUDE.md, CONTRIBUTING.md, .aiignore, CI workflow files, package manifests, AI config files (.cursorrules, .mcp.json, AGENTS.md, copilot-instructions.md). If a file doesn't exist, record its absence — that's data too. |
-| Git history summary | GitHub API: commits (last 100) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency |
+| Git history summary | GitHub API: commits (last 100, or last 90 days — whichever yields more data) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency. The 90-day window aligns with the Adoption State analysis window (Section 3.1). |
 | High-churn modules | Derived from git history | For each of the last 100 commits, collect the immediate parent directory of each changed file (strip trailing filename, keep the path — e.g., `src/foo/bar.ts` → `src/foo`). Deduplicate directories within each commit. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. Exclude files at repo root (no parent directory). Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`. |
 | PR data | GitHub API: PRs (last 30 merged) | Extract: review counts, CI check status, AI bot activity, PR descriptions |
 | CI configuration | Workflow YAML files | Extract: test steps, linter steps, security scanning, AI tools in CI |
@@ -246,13 +246,15 @@ Recommendations ordered by **ROI descending**.
 
 Recommendation #1 is the highest-ROI action. If the team reads nothing else, they read #1.
 
-Each recommendation must have ALL fields (schema: `$defs.recommendation` in `schema/assessment-v6.schema.json`):
+Each recommendation has its **own** `effort` and `impact` fields — these are assessed independently from the source opportunity. A HIGH-value opportunity may yield a Low-effort recommendation.
+
+All fields (schema: `$defs.recommendation` in `schema/assessment-v6.schema.json`):
 ```
 id:                    hash(repo_slug + opportunity_id + type)
 title:                 specific action — not generic advice
 type:                  start_now / foundation_first / fix_the_foundation / kb_gap
-effort:                Low / Medium / High
-impact:                HIGH / MEDIUM / LOW
+effort:                Low / Medium / High — assessed for this recommendation specifically
+impact:                HIGH / MEDIUM / LOW — assessed for this recommendation specifically
 opportunity_id:        linked opportunity
 measurable_outcome:    "done when X is true" — must be verifiable from repo data
 recommended_learning:  from KB learning_entry for this use-case; what the team needs
