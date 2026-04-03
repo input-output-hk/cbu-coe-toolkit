@@ -140,7 +140,61 @@ orgs:
 # scope: learning ONLY — never scored, never reported to teams
 # Selected by tri-agent consensus (all 3 agents ≥9/10)
 # ============================================================
-reference_repos: []
+reference_repos:
+  - repo: IntersectMBO/plutus
+    language: haskell
+    scope: learning
+    rationale: "Production Haskell compiler and toolchain (1635 stars) with comprehensive .github/copilot-instructions.md covering Nix+G"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: dusk-network/rusk
+    language: rust
+    scope: learning
+    rationale: "Production blockchain node and smart contract stack (201 stars) with both CLAUDE.md and agents.md at root providing elev"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: agent-sh/agnix
+    language: rust
+    scope: learning
+    rationale: "AI coding assistant linter and LSP (143 stars) with AGENTS.md, CLAUDE.md, .claude/ directory, skills/, knowledge-base/, "
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: wasp-lang/open-saas
+    language: typescript
+    scope: learning
+    rationale: "Popular TypeScript SaaS boilerplate (13766 stars) with AGENTS.md explicitly noted in description as AI-ready, Co-authore"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: microsoft/skills
+    language: typescript
+    scope: learning
+    rationale: "Microsoft's official skills and MCP server reference repo (1941 stars) with Agents.md, .claude/, .claude-plugin/, .openc"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: Piebald-AI/tweakcc
+    language: typescript
+    scope: learning
+    rationale: "Claude Code customization tool (1556 stars) with AGENTS.md support as core feature, deeply AI-native codebase, active da"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: MrLesk/Backlog.md
+    language: typescript
+    scope: learning
+    rationale: "Human-AI collaboration project management tool (5282 stars) with AGENTS.md at root and detailed MCP backlog workflow ins"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: pyodide/pyodide
+    language: python
+    scope: learning
+    rationale: "Production Python-to-WebAssembly distribution (14493 stars) with AGENTS.md at root providing comprehensive contribution "
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
+  - repo: gadievron/raptor
+    language: python
+    scope: learning
+    rationale: "Python offensive/defensive security tool built on Claude Code (1738 stars) with CLAUDE.md, .claude/ directory, CLAUDE_CO"
+    selected_by: tri-agent-consensus
+    selected_date: 2026-04-03
 # Populated by /select-reference-repos skill after tri-agent consensus
 # Format per entry:
 #   - repo: owner/repo-name
