@@ -134,3 +134,18 @@ orgs:
       - repo: pebble-lsp
         project: Plutus HA — Plu-ts
         language: TypeScript
+
+# ============================================================
+# Reference Repos — External benchmarks for KB enrichment
+# scope: learning ONLY — never scored, never reported to teams
+# Selected by tri-agent consensus (all 3 agents ≥9/10)
+# ============================================================
+reference_repos: []
+# Populated by /select-reference-repos skill after tri-agent consensus
+# Format per entry:
+#   - repo: owner/repo-name
+#     language: haskell|rust|typescript|python
+#     scope: learning
+#     rationale: "one-line reason"
+#     selected_by: tri-agent-consensus
+#     selected_date: YYYY-MM-DD

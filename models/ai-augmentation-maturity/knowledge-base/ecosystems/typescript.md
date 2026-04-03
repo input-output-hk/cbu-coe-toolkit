@@ -47,6 +47,103 @@ readiness_criteria:
   - criterion: "CI type-checks across packages"
     type: Objective
     check: "CI runs tsc --noEmit or equivalent across the workspace"
+
+kb_version: "6.2"
+
+adoption_signals:
+  active:
+    - description: "AI-attributed commits creating or updating contract files"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits touching packages/*/contract/ or packages/*/types/"
+      threshold: "count >= 3 in last 90 days"
+    - description: "claude.yml or Cursor config references contract generation workflow"
+      method: file_search
+      pattern: ".github/workflows/claude.yml or .cursor/ config referencing contract or type generation"
+      threshold: "exists: true"
+    - description: "NX generator combined with AI workflow for contracts"
+      method: file_search
+      pattern: "tools/generators/ or workspace-generators/ with contract/type scaffolding + CLAUDE.md or .mcp.json referencing contracts"
+      threshold: "exists: true"
+      verification_hint: "Must have both generator and AI config — generator alone is not AI adoption"
+  partial:
+    - description: "CLAUDE.md and .claude/ directory exist but no AI contract commits"
+      method: file_search
+      pattern: "CLAUDE.md or .claude/ directory exists"
+      threshold: "exists: true"
+      verification_hint: "Check commit_scan for contract-path AI commits — if none, Partial only"
+    - description: "1-2 AI commits touching contract paths"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits touching packages/*/contract/ or packages/*/types/"
+      threshold: "count >= 1 AND count < 3 in last 90 days"
+  absent:
+    - description: "No AI config files in repo"
+      method: file_search
+      pattern: "CLAUDE.md, .cursorrules, .mcp.json, copilot-instructions.md, AGENTS.md"
+      threshold: "none exist"
+    - description: "No AI attribution in commits"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini|AI)"
+      threshold: "count == 0 in last 180 days"
+  anti_patterns:
+    - description: "AI config exists but contract packages have no Zod or runtime validation"
+      method: content_analysis
+      pattern: "AI config present but contract directories contain only bare interfaces — no Zod, io-ts, or runtime validation"
+      actual_state: "Partial at best — AI may generate contracts but without runtime safety"
+  confidence_threshold: 60
+
+readiness_levels:
+  undiscovered:
+    description: "No contract infrastructure or strict mode"
+    criteria:
+      - description: "Fewer than 3 contract or shared-type packages"
+        method: file_search
+        pattern: "packages/*/contract/ or packages/*/types/ directories"
+        threshold: "count < 3"
+      - description: "TypeScript strict mode not enabled"
+        method: file_search
+        pattern: "tsconfig.json with strict: true in compilerOptions"
+        threshold: "exists: false"
+    quantitative: "<3 contract packages, no strict mode"
+  exploring:
+    description: "Contract pattern exists but incomplete"
+    requires: [undiscovered]
+    criteria:
+      - description: "3-10 contract or type packages exist"
+        method: file_search
+        pattern: "packages/*/contract/ or packages/*/types/ directories"
+        threshold: "count >= 3 AND count <= 10"
+      - description: "Strict mode enabled"
+        method: file_search
+        pattern: "tsconfig.json with strict: true"
+        threshold: "exists: true"
+      - description: "No runtime validation (Zod/io-ts) in contracts"
+        method: file_search
+        pattern: "zod or io-ts imports in contract package files"
+        threshold: "count == 0"
+    quantitative: "3-10 contract packages, strict mode, no Zod/io-ts"
+  practiced:
+    description: "Comprehensive contract infrastructure ready for AI augmentation"
+    requires: [exploring]
+    criteria:
+      - description: "10+ contract or type packages"
+        method: file_search
+        pattern: "packages/*/contract/ or packages/*/types/ directories"
+        threshold: "count >= 10"
+      - description: "Strict mode enabled across workspace"
+        method: file_search
+        pattern: "tsconfig.json with strict: true"
+        threshold: "exists: true"
+      - description: "Zod or io-ts used for runtime validation in contracts"
+        method: file_search
+        pattern: "zod or io-ts in contract package dependencies"
+        threshold: "exists: true"
+      - description: "CI type-checks across workspace boundaries"
+        method: file_search
+        pattern: "CI workflow running tsc --noEmit or nx affected:typecheck"
+        threshold: "exists: true"
+    quantitative: "10+ contract packages, strict + Zod/io-ts + CI cross-workspace type check"
+    temporal_check: "Last 3 new modules added have corresponding contract packages"
+  confidence_threshold: 60
 ```
 
 ## Test generation for UI components
@@ -92,6 +189,101 @@ readiness_criteria:
   - criterion: "At least one component test exists as reference"
     type: Objective
     check: "Any .test.tsx or .spec.tsx file exists in the component directory tree"
+
+kb_version: "6.2"
+
+adoption_signals:
+  active:
+    - description: "AI-generated test files in component directories"
+      method: file_search
+      pattern: "*.test.tsx or *.spec.tsx files with Co-authored-by AI attribution in git log"
+      threshold: "count >= 3 in last 90 days"
+    - description: "AI commits touching test paths"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits touching **/*.test.tsx or **/*.spec.tsx"
+      threshold: "count >= 3 in last 90 days"
+    - description: "AI PR reviews or bot PRs adding component tests"
+      method: pr_analysis
+      pattern: "PRs with AI co-authorship adding .test.tsx or .spec.tsx files"
+      threshold: "count >= 2 in last 90 days"
+  partial:
+    - description: "1-2 AI commits touching test files"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits touching **/*.test.tsx or **/*.spec.tsx"
+      threshold: "count >= 1 AND count < 3 in last 90 days"
+    - description: "AI config exists but no test-generation evidence"
+      method: file_search
+      pattern: "CLAUDE.md or .cursorrules or .mcp.json exists"
+      threshold: "exists: true"
+      verification_hint: "File exists but no AI-attributed test commits — Partial infrastructure"
+  absent:
+    - description: "No AI config files"
+      method: file_search
+      pattern: "CLAUDE.md, .cursorrules, .mcp.json, copilot-instructions.md, AGENTS.md"
+      threshold: "none exist"
+    - description: "No AI attribution in any commits"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini|AI)"
+      threshold: "count == 0 in last 180 days"
+  anti_patterns:
+    - description: "AI-generated tests assert implementation details not behavior"
+      method: content_analysis
+      pattern: "Test files with assertions on internal state, DOM structure, or snapshot-only tests without behavioral assertions"
+      actual_state: "Partial at best — tests exist but provide fragile coverage"
+    - description: "AI test config present but test runner broken or disabled"
+      method: file_search
+      pattern: "jest.config or vitest.config exists but CI does not run tests"
+      actual_state: "Absent — infrastructure exists on paper only"
+  confidence_threshold: 60
+
+readiness_levels:
+  undiscovered:
+    description: "No test runner or testing library configured"
+    criteria:
+      - description: "No test runner config"
+        method: file_search
+        pattern: "jest.config.* or vitest.config.* files"
+        threshold: "count == 0"
+      - description: "No testing library in dependencies"
+        method: file_search
+        pattern: "@testing-library/react or @testing-library/vue in package.json"
+        threshold: "exists: false"
+  exploring:
+    description: "Test infrastructure exists but coverage is low"
+    requires: [undiscovered]
+    criteria:
+      - description: "Test runner configured"
+        method: file_search
+        pattern: "jest.config.* or vitest.config.* exists"
+        threshold: "exists: true"
+      - description: "Testing library available"
+        method: file_search
+        pattern: "@testing-library/react or equivalent in devDependencies"
+        threshold: "exists: true"
+      - description: "Less than 10% of components have test files"
+        method: file_search
+        pattern: "*.test.tsx or *.spec.tsx files vs *.tsx component files"
+        threshold: "ratio < 0.10"
+    quantitative: "Runner + library configured, <10% component test coverage"
+  practiced:
+    description: "Comprehensive testing infrastructure ready for AI augmentation"
+    requires: [exploring]
+    criteria:
+      - description: "More than 30% of components have test files"
+        method: file_search
+        pattern: "*.test.tsx or *.spec.tsx files vs *.tsx component files"
+        threshold: "ratio >= 0.30"
+      - description: "Storybook stories exist as component reference"
+        method: file_search
+        pattern: "*.stories.tsx or *.stories.ts files in component directories"
+        threshold: "count >= 5"
+      - description: "CI runs component tests"
+        method: file_search
+        pattern: "CI workflow running jest or vitest on pull_request"
+        threshold: "exists: true"
+    quantitative: ">30% component test coverage, Storybook stories as reference, CI test gate"
+    temporal_check: "Last 3 new components added have corresponding test files"
+  confidence_threshold: 60
 ```
 
 ## Documentation generation for complex hooks and utilities
@@ -132,6 +324,101 @@ readiness_criteria:
   - criterion: "Exported functions are typed (no 'any' escape hatches)"
     type: Semi-objective
     check: "Sample 5 exported functions — fewer than 20% use 'any' or 'unknown' as return type"
+
+kb_version: "6.2"
+
+adoption_signals:
+  active:
+    - description: "AI-attributed commits adding JSDoc comments"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits adding or modifying JSDoc (/** */) blocks"
+      threshold: "count >= 3 in last 90 days"
+    - description: "AI commits modifying TypeDoc configuration"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits touching typedoc.json or typedoc.config.*"
+      threshold: "count >= 1 in last 90 days"
+    - description: "AI PRs adding documentation to exported functions"
+      method: pr_analysis
+      pattern: "PRs with AI co-authorship adding JSDoc blocks to hooks/ or utils/ files"
+      threshold: "count >= 2 in last 90 days"
+  partial:
+    - description: "AI config references doc generation but few doc commits"
+      method: file_search
+      pattern: "CLAUDE.md or .cursorrules mentioning JSDoc, TypeDoc, or documentation generation"
+      threshold: "exists: true"
+      verification_hint: "Config mentions docs but check commit_scan for actual AI doc commits"
+    - description: "1-2 AI commits adding JSDoc"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits adding JSDoc blocks"
+      threshold: "count >= 1 AND count < 3 in last 90 days"
+  absent:
+    - description: "No AI config files"
+      method: file_search
+      pattern: "CLAUDE.md, .cursorrules, .mcp.json, copilot-instructions.md, AGENTS.md"
+      threshold: "none exist"
+    - description: "No AI attribution in commits"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini|AI)"
+      threshold: "count == 0 in last 180 days"
+  anti_patterns:
+    - description: "AI-generated JSDoc is generic or copy-paste of function name"
+      method: content_analysis
+      pattern: "JSDoc comments that merely restate the function name or have placeholder descriptions"
+      actual_state: "Partial at best — docs exist but add no value beyond what the type signature provides"
+  confidence_threshold: 60
+
+readiness_levels:
+  undiscovered:
+    description: "No documentation tooling or JSDoc present"
+    criteria:
+      - description: "No TypeDoc in dependencies"
+        method: file_search
+        pattern: "typedoc in devDependencies in any package.json"
+        threshold: "exists: false"
+      - description: "No JSDoc comments on exported functions"
+        method: content_analysis
+        pattern: "/** */ blocks preceding export function or export const declarations"
+        threshold: "count == 0 in sampled files"
+        sampling: "sample 10 files from hooks/ or utils/"
+  exploring:
+    description: "Doc tooling configured but low coverage"
+    requires: [undiscovered]
+    criteria:
+      - description: "TypeDoc or JSDoc tooling available"
+        method: file_search
+        pattern: "typedoc in devDependencies or typedoc.json exists"
+        threshold: "exists: true"
+      - description: "JSDoc coverage below 20% on exports"
+        method: content_analysis
+        pattern: "Exported functions with preceding JSDoc vs total exports"
+        threshold: "ratio < 0.20"
+        sampling: "sample 10 files from hooks/ or utils/"
+      - description: "Exported functions use proper types (not any)"
+        method: content_analysis
+        pattern: "export function or export const declarations using any as return type"
+        threshold: "ratio < 0.20 in sampled files"
+    quantitative: "TypeDoc configured, <20% JSDoc coverage, typed exports"
+  practiced:
+    description: "Comprehensive documentation ready for AI augmentation"
+    requires: [exploring]
+    criteria:
+      - description: "JSDoc coverage above 50% on exported functions"
+        method: content_analysis
+        pattern: "Exported functions with preceding JSDoc vs total exports"
+        threshold: "ratio >= 0.50"
+        sampling: "sample 10 files from hooks/ or utils/"
+      - description: "TypeDoc generates output in CI or build"
+        method: file_search
+        pattern: "typedoc command in CI workflow or build scripts"
+        threshold: "exists: true"
+      - description: "JSDoc includes @example tags with real usage"
+        method: content_analysis
+        pattern: "@example tags in JSDoc blocks"
+        threshold: "found in >= 30% of JSDoc blocks in sampled files"
+        sampling: "sample 10 documented files"
+    quantitative: ">50% JSDoc coverage on exports, TypeDoc in CI, @example tags"
+    temporal_check: "Last 3 new exported functions have JSDoc with @param and @returns"
+  confidence_threshold: 60
 ```
 
 ## AI-assisted PR description and changelog generation
@@ -171,6 +458,101 @@ readiness_criteria:
   - criterion: "CI runs on PRs"
     type: Objective
     check: "CI workflow triggered on pull_request events"
+
+kb_version: "6.2"
+
+adoption_signals:
+  active:
+    - description: "Cursor CURSOR_SUMMARY sections with substantive content in PRs"
+      method: pr_analysis
+      pattern: "PR bodies containing CURSOR_SUMMARY with >50 words of non-boilerplate content"
+      threshold: "count >= 5 in last 90 days"
+    - description: "claude.yml GHA workflow running PR review"
+      method: file_search
+      pattern: ".github/workflows/claude.yml triggered on pull_request or pull_request_target"
+      threshold: "exists: true"
+    - description: "AI-generated PR descriptions in recent PRs"
+      method: pr_analysis
+      pattern: "PRs with structured descriptions containing AI attribution or bot labels"
+      threshold: "count >= 5 in last 90 days"
+  partial:
+    - description: "PR template exists but AI descriptions inconsistent"
+      method: file_search
+      pattern: ".github/PULL_REQUEST_TEMPLATE.md exists"
+      threshold: "exists: true"
+      verification_hint: "Template exists but check PR analysis for actual AI-generated content"
+    - description: "Some CURSOR_SUMMARY sections but sparse content"
+      method: pr_analysis
+      pattern: "PR bodies containing CURSOR_SUMMARY with <50 words"
+      threshold: "count >= 1"
+  absent:
+    - description: "No PR template"
+      method: file_search
+      pattern: ".github/PULL_REQUEST_TEMPLATE.md"
+      threshold: "exists: false"
+    - description: "No AI attribution in PR descriptions"
+      method: pr_analysis
+      pattern: "PRs with CURSOR_SUMMARY, AI co-authorship, or bot labels"
+      threshold: "count == 0 in last 90 days"
+  anti_patterns:
+    - description: "Empty CURSOR_SUMMARY sections in PRs"
+      method: pr_analysis
+      pattern: "PR bodies containing CURSOR_SUMMARY with empty or <10 word content"
+      actual_state: "Absent — tool is configured but not producing value"
+    - description: "claude.yml PR review workflow exists but disabled"
+      method: file_search
+      pattern: ".github/workflows/claude.yml with workflow disabled or commented out"
+      actual_state: "Partial at best — was Active, now degraded"
+  confidence_threshold: 60
+
+readiness_levels:
+  undiscovered:
+    description: "No PR review infrastructure"
+    criteria:
+      - description: "No PR template"
+        method: file_search
+        pattern: ".github/PULL_REQUEST_TEMPLATE.md"
+        threshold: "exists: false"
+      - description: "No CI on pull requests"
+        method: file_search
+        pattern: "CI workflows triggered on pull_request events"
+        threshold: "count == 0"
+  exploring:
+    description: "PR infrastructure exists but limited AI integration"
+    requires: [undiscovered]
+    criteria:
+      - description: "PR template exists"
+        method: file_search
+        pattern: ".github/PULL_REQUEST_TEMPLATE.md"
+        threshold: "exists: true"
+      - description: "CI runs on PRs"
+        method: file_search
+        pattern: "CI workflow triggered on pull_request events"
+        threshold: "exists: true"
+      - description: "Moderate PR volume"
+        method: pr_analysis
+        pattern: "Merged PRs in last 30 days"
+        threshold: "count >= 5"
+    quantitative: "PR template + CI on PRs + 5+ merged PRs/month"
+  practiced:
+    description: "Active AI-assisted PR workflow"
+    requires: [exploring]
+    criteria:
+      - description: "High PR volume with structured descriptions"
+        method: pr_analysis
+        pattern: "Merged PRs in last 30 days"
+        threshold: "count >= 15"
+      - description: "AI PR review workflow active"
+        method: file_search
+        pattern: ".github/workflows/claude.yml triggered on pull_request"
+        threshold: "exists: true"
+      - description: "CURSOR_SUMMARY or AI descriptions in majority of PRs"
+        method: pr_analysis
+        pattern: "PRs with CURSOR_SUMMARY or AI attribution vs total PRs"
+        threshold: "ratio >= 0.50 in last 30 days"
+    quantitative: "15+ PRs/month, AI review workflow, >50% PRs with AI descriptions"
+    temporal_check: "Last 5 merged PRs have structured AI-generated descriptions"
+  confidence_threshold: 60
 ```
 
 ## Debugging complex state management
@@ -211,6 +593,104 @@ readiness_criteria:
   - criterion: "State types are defined"
     type: Objective
     check: "TypeScript interfaces or types for state shape exist"
+
+kb_version: "6.2"
+
+adoption_signals:
+  active:
+    - description: "AI-attributed commits referencing debugging or state fixes"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits with messages matching (debug|fix.*state|race condition|stale)"
+      threshold: "count >= 2 in last 90 days"
+    - description: "AI troubleshooting skill configured"
+      method: file_search
+      pattern: ".claude/skills/troubleshoot* or .claude/skills/debug* files"
+      threshold: "exists: true"
+    - description: "AI debug fix PRs merged"
+      method: pr_analysis
+      pattern: "PRs with AI co-authorship and title/body matching (debug|fix.*state|race condition|stale|selector)"
+      threshold: "count >= 2 in last 90 days"
+  partial:
+    - description: "AI config exists but no debug-specific commits"
+      method: file_search
+      pattern: "CLAUDE.md or .cursorrules exists"
+      threshold: "exists: true"
+      verification_hint: "Config exists but check commit_scan for debug-path AI commits"
+    - description: "1 AI commit fixing state issue"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini) in commits with messages matching (debug|fix.*state|race condition|stale)"
+      threshold: "count == 1 in last 90 days"
+  absent:
+    - description: "No AI config files"
+      method: file_search
+      pattern: "CLAUDE.md, .cursorrules, .mcp.json, copilot-instructions.md, AGENTS.md"
+      threshold: "none exist"
+    - description: "No AI attribution in commits"
+      method: commit_scan
+      pattern: "Co-authored-by.*(Claude|Copilot|Cursor|Gemini|AI)"
+      threshold: "count == 0 in last 180 days"
+  anti_patterns:
+    - description: "AI debugging commits that suppress errors rather than fix root cause"
+      method: content_analysis
+      pattern: "AI-attributed commits adding try/catch, error suppression, or // eslint-disable without fixing state flow"
+      actual_state: "Absent — AI is masking bugs, not resolving them"
+  confidence_threshold: 60
+
+readiness_levels:
+  undiscovered:
+    description: "No centralized state management"
+    criteria:
+      - description: "No state management library in dependencies"
+        method: file_search
+        pattern: "redux, zustand, mobx, @ngrx/store, or xstate in package.json dependencies"
+        threshold: "exists: false"
+      - description: "No dedicated store or state directory"
+        method: file_search
+        pattern: "store/ or state/ or reducers/ directories"
+        threshold: "count == 0"
+  exploring:
+    description: "State management exists but weakly typed"
+    requires: [undiscovered]
+    criteria:
+      - description: "State management library in dependencies"
+        method: file_search
+        pattern: "redux, zustand, mobx, @ngrx/store, or xstate in package.json"
+        threshold: "exists: true"
+      - description: "Basic state types defined"
+        method: file_search
+        pattern: "TypeScript interface or type for state shape in store/ or state/ directories"
+        threshold: "exists: true"
+      - description: "No typed selectors or effect documentation"
+        method: content_analysis
+        pattern: "Typed selector functions or RxJS effect documentation in store/ files"
+        threshold: "count == 0 in sampled files"
+        sampling: "sample 5 store files"
+    quantitative: "State lib + basic types, no typed selectors"
+  practiced:
+    description: "Well-structured state management ready for AI debugging"
+    requires: [exploring]
+    criteria:
+      - description: "Dedicated store directory with organized modules"
+        method: file_search
+        pattern: "store/ directory with multiple subdirectories or module files"
+        threshold: "count >= 3 module files or subdirectories"
+      - description: "Typed selectors defined"
+        method: content_analysis
+        pattern: "Typed selector functions with explicit return types in store/ files"
+        threshold: "found in >= 50% of sampled store files"
+        sampling: "sample 5 store files"
+      - description: "RxJS effects or async state flows documented"
+        method: content_analysis
+        pattern: "JSDoc or inline comments on effect/thunk/saga definitions"
+        threshold: "found in >= 30% of effect files"
+        sampling: "sample 5 effect files"
+      - description: "State-related CI checks pass"
+        method: file_search
+        pattern: "CI workflow running type checks covering store/ directory"
+        threshold: "exists: true"
+    quantitative: "Store dir with 3+ modules, typed selectors in 50%+, documented effects, CI coverage"
+    temporal_check: "Last 3 state-related bug fixes resolved via typed selectors, not workarounds"
+  confidence_threshold: 60
 ```
 
 ---

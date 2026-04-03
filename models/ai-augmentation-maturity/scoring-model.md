@@ -1,49 +1,67 @@
-# AAMM v6 — Scoring Model
+# AAMM v7 — Scoring Model
 
-> **This file is the operational manual for the AAMM v6 scanner agent.**
+> **This file is the operational manual for the AAMM v7 scanner agent.**
 > Read this file at scan time. Follow it step by step. Do not improvise.
 >
 > For design rationale: see [spec.md](spec.md).
 > For KB patterns and criteria: see [knowledge-base/](knowledge-base/).
-> For scan skill: see [scan-aamm-v6 skill](../../.claude/skills/scan-aamm-v6/SKILL.md).
+> For scan skill: see [scan-aamm-v7 skill](../../.claude/skills/scan-aamm-v7/SKILL.md).
+>
+> **Tri-agent consensus:** Scoring scans use three independent agents (Claude + Gemini + Grok).
+> Each agent independently requests files from a local clone, analyzes independently,
+> then reaches tiered consensus through evidence-based debate.
+> See scan skill for orchestration details.
 
 ---
 
 ## How to Read This File
 
-You are an AI agent running an AAMM v6 scan. This file tells you:
-1. What data to collect (Section 1)
+You are an AI agent (Claude subagent) running an AAMM v7 scan. This file tells you:
+1. What data you have and how to use it (Section 1)
 2. How to generate the Opportunity Map (Section 2)
 3. How to assess Adoption, Readiness, and Risk (Section 3)
 4. How to generate Recommendations (Section 4)
 5. Rules you cannot break (Section 5)
 6. Output format (Section 6)
 
-Adversarial reviews (Stage A and Stage B) are handled by separate agent invocations. You do not run them yourself — the scan skill orchestrates them. But you must produce output that can withstand them.
+Tri-agent consensus (Claude + Gemini + Grok): all three agents analyze independently from a local clone, then reach tiered consensus through evidence-based debate. The scan skill orchestrates the consensus loops. You must produce output that can withstand challenge from two independent agents with different lenses.
 
 ---
 
 ## 1. Data Collection
 
-Collect all of the following before any assessment begins. Do not assess while collecting — collect first, assess after.
+You are a Claude subagent. The orchestrator has already:
+- Cloned the repo to `$SCAN_DIR/clone/`
+- Generated `manifest.json` (structure + stats, no content)
+- Served your requested files to `served-files-claude.json`
 
-### Required data
+Your task: analyze the served files against KB patterns.
+If you need a file not in your served set: note it as "requested but not served" in your output — the orchestrator will handle additional file requests.
+
+Repo type: `{REPO_TYPE}`. Active SDLC sections: `{ACTIVE_SDLC_SECTIONS}`.
+
+### Available data
 
 | Data | Source | Notes |
 |------|--------|-------|
-| File tree (full) | GitHub API: repo contents / git ls-tree | Needed for: module structure, test directories, config files, documentation density |
-| Key file contents | GitHub API: file contents | Read: README.md, CLAUDE.md, CONTRIBUTING.md, .aiignore, CI workflow files, package manifests, AI config files (.cursorrules, .mcp.json, AGENTS.md, copilot-instructions.md). If a file doesn't exist, record its absence — that's data too. |
-| Git history summary | GitHub API: commits (last 100 commits OR last 90 days, whichever yields more) | Extract: commit authors, co-authored-by trailers, AI attribution patterns, files changed per commit, commit frequency. **This defines the "analysis set" — all subsequent sections (churn, adoption, risk) operate on this exact set of commits.** |
-| High-churn modules | Derived from git history | For each of the last 100 commits, collect the immediate parent directory of each changed file (strip trailing filename, keep the path — e.g., `src/foo/bar.ts` → `src/foo`). Deduplicate directories within each commit. Count how many unique commits touched each directory. Top 10 directories by unique commit count = active development areas. Exclude files at repo root (no parent directory). Example: one commit changing 50 files in `src/foo` counts as 1 for `src/foo`. |
-| PR data | GitHub API: PRs (last 30 merged) | Extract: review counts, CI check status, AI bot activity, PR descriptions |
-| CI configuration | Workflow YAML files | Extract: test steps, linter steps, security scanning, AI tools in CI |
-| Ecosystem detection | Package manifests + file extensions | Primary ecosystem determines which KB patterns to load |
+| File tree (full) | `manifest.json` → `file_tree` | Module structure, test dirs, config files, docs density |
+| File contents | `served-files-claude.json` | The files you requested in Phase 1. Contents served from local clone. |
+| Git history summary | `manifest.json` → `git_stats` | File commit counts, directory churn. **This defines the "analysis set."** |
+| High-churn modules | Derived from `manifest.json` → `git_stats.commit_count_per_dir` | Top dirs by commit count = active development areas |
+| Contributor count | `manifest.json` → `contributor_count` | |
+| Open PRs | `manifest.json` → `open_pr_count` | |
 
-### What NOT to collect
+### How to identify high-churn modules
 
-- File contents beyond key files (don't read every source file — use tree structure and git history for module-level understanding)
-- Issues (too noisy, low signal for AI opportunity assessment)
-- Deployment config (out of scope — AAMM assesses development practices, not operations)
+From `manifest.json.git_stats.commit_count_per_dir`:
+Top 10 directories by unique commit count = active development areas.
+Exclude repo root files (no parent directory).
+
+### What NOT to do
+
+- Do not use GitHub API directly — all data comes from the local clone via served-files
+- Do not read previous scan results before Phase 5 (scan-from-zero rule)
+- Issues are out of scope (too noisy, low signal)
 
 ---
 
@@ -87,7 +105,7 @@ Produce opportunities ordered by **ROI descending**.
 
 **Confidence note:** Value and effort are subjective estimates (LOW confidence ceiling per Section 5). ROI ordering is a heuristic to prioritize review, not a definitive ranking. State this in the report: "ROI ordering is a heuristic based on estimated value and effort — treat as suggested priority, not certainty."
 
-Each opportunity must have ALL of these fields (schema: `$defs.opportunity` in `schema/assessment-v6.schema.json`):
+Each opportunity must have ALL of these fields (schema: `schema/assessment-v7.schema.json`):
 ```
 id:          hash(repo_slug + kb_pattern_id) for KB-derived; hash(repo_slug + normalized_title) for novel
 title:       specific action — "Use AI for corner case discovery in Conway era ledger rules" not "AI for testing"
@@ -99,7 +117,7 @@ kb_pattern:  KB pattern ID or null if novel
 seen_in:     [{repo, outcome}] from KB or empty
 ```
 
-**Self-check before proceeding:** For each opportunity, ask: "Would this identical opportunity appear on any other repo in this ecosystem?" If yes, it's too generic — make it specific or drop it. Stage A will reject it anyway.
+**Self-check before proceeding:** For each opportunity, ask: "Would this identical opportunity appear on any other `{ECOSYSTEM}` repo with similar characteristics?" If yes, it's too generic — make it specific to this repo's actual evidence, or drop it. Two other agents with different lenses (Gemini: skeptical/evidence-heavy; Grok: survivability/scale/absence) will independently evaluate this repo and challenge generic findings.
 
 ### Minimum quality bar
 
@@ -112,7 +130,9 @@ seen_in:     [{repo, outcome}] from KB or empty
 
 ## 3. Component Assessment
 
-After Stage A filters the Opportunity Map, assess the remaining approved opportunities.
+**KB version check:** All loaded KB entries must have the same `kb_version`. If any entry has a different version → STOP and report "KB version mismatch — migration incomplete."
+
+After the tri-agent consensus loop filters the Opportunity Map (tiered: HIGH = all 3 ≥9, MEDIUM = 2/3 ≥9 + third ≥7), assess the remaining approved opportunities.
 
 ### 3.1 Adoption State
 
@@ -124,11 +144,25 @@ For each approved opportunity, determine: **Active** / **Partial** / **Absent**
 | **Partial** | Some evidence but not systematic | 1-2 AI-attributed commits, or one-off usage pattern, or AI config references the area but no commit evidence |
 | **Absent** | No positive evidence | No AI attribution in relevant files, no AI config referencing this area |
 
-**Detection methods for AI attribution:**
-- `Co-authored-by:` trailers mentioning Claude, Copilot, Cursor, Gemini, or other AI tools
-- Bot-authored PRs (copilot[bot], coderabbit-ai[bot], etc.)
-- AI CI actions in workflow YAML
-- AI config files (CLAUDE.md, .cursorrules, etc.) referencing specific use cases
+**KB-driven detection:** For each approved opportunity, load its `adoption_signals` from KB and follow this resolution order:
+
+1. Check `anti_patterns` first — if ≥50% of checks match, apply `actual_state` override
+2. Check `active` signals — if any signal's threshold is met, classify **Active**
+3. Check `partial` signals — if any signal's threshold is met, classify **Partial**
+4. Check `absent` confirmatory checks — if ALL met, classify **Absent**
+5. If none match cleanly → flag "ambiguous" with best-guess + evidence
+6. If <60% of signals are verifiable (or per-entry confidence_threshold) → flag "insufficient data" and cap adoption at **Partial** maximum
+
+**Method execution:**
+| Method | How to execute | Cost |
+|--------|---------------|------|
+| `file_search` | Check tree.json for file/directory existence | Free |
+| `content_analysis` | Read file via Contents API, match pattern | 1 API call |
+| `commit_scan` | Search commits.json messages for pattern | Free |
+| `pr_analysis` | Search prs.json for pattern | Free |
+| `git_log_search` | Search git log for pattern | Free/1 call |
+
+**Do not invent signals.** Use only what the KB entry's `adoption_signals` specifies. If you observe a novel signal not in KB, note it as "potential KB extension" in detailed-log but do not factor it into classification.
 
 **Do not infer.** Absence of attribution means absence of observable signal, not absence of AI use. State this explicitly when recording Absent.
 
@@ -136,15 +170,21 @@ For each approved opportunity, determine: **Active** / **Partial** / **Absent**
 
 For each approved opportunity, assess readiness using **KB criteria only**.
 
-**Step 1:** Look up the opportunity's use-case type in the KB (`knowledge-base/` readiness criteria for that use-case type).
+**KB-driven assessment:** Load the opportunity's `readiness_levels` from KB.
 
-**Step 2:** If KB criteria exist — evaluate each criterion:
-- Check: execute the criterion's `check` instruction against repo data
-- Result: YES / NO
-- Confidence: based on evidence type (Objective → HIGH ceiling, Semi-objective → MEDIUM, Subjective → LOW)
-- Evidence: cite the specific file/config/commit that proves or disproves the criterion
+**Process:**
+1. Evaluate from highest level down: **practiced** → **exploring** → **undiscovered**
+2. For each level, check ALL criteria against repo data using the specified method + threshold
+3. The highest level where ALL criteria meet thresholds → that's the readiness level
+4. **Tie-breaking:** If criteria partially match multiple levels → assign the lower level
+5. **Hierarchy advisory:** If practiced criteria met but exploring criteria NOT met → assign Exploring + warning "hierarchy violation"
+6. **Temporal freshness:** If `temporal_check` present, verify. If recent additions don't follow pattern → downgrade one level
+7. If KB has no `readiness_levels` → fall back to `readiness_criteria` (binary) if present, else "Not Assessable"
+8. If <60% of criteria are verifiable → flag "insufficient data" for this entry
 
-**Step 3:** Determine level from criteria results:
+**Do not invent criteria.** Use only what the KB entry specifies.
+
+**Determine level from criteria results:**
 
 | Level | Criteria met |
 |-------|-------------|
@@ -208,7 +248,7 @@ Check: Are AI-attributed commits present across multiple areas AND are there zer
 
 ### Input
 
-- Approved Opportunity Map (post-Stage A)
+- Approved Opportunity Map (post-consensus)
 - Adoption State per opportunity
 - Readiness per opportunity
 - Risk Surface
@@ -248,7 +288,7 @@ Recommendation #1 is the highest-ROI action. If the team reads nothing else, the
 
 Each recommendation has its **own** `effort` and `impact` fields — these are assessed independently from the source opportunity. A HIGH-value opportunity may yield a Low-effort recommendation.
 
-All fields (schema: `$defs.recommendation` in `schema/assessment-v6.schema.json`):
+All fields (schema: `schema/assessment-v7.schema.json` → `recommendations` array items):
 ```
 id:                    hash(repo_slug + opportunity_id + type)
 title:                 specific action — not generic advice
@@ -269,7 +309,7 @@ kb_ref:                KB pattern reference or null
 2. "Is this specific to this team, or would it appear on any report?" If any report → too generic.
 3. "Can I verify the measurable outcome from repo data?" If no → fix the outcome.
 
-Stage B will test all three. Fix them now.
+The other agent will independently generate recommendations and challenge yours during the consensus loop. Fix issues now.
 
 ---
 
@@ -339,7 +379,7 @@ Section order is fixed. Do not rearrange.
 
 ```markdown
 # AAMM Report: {owner}/{repo}
-> Scan date: {YYYY-MM-DD} | Ecosystem: {ecosystem} | Schema: v6.0
+> Scan date: {YYYY-MM-DD} | Ecosystem: {ecosystem} | Schema: v7.0
 
 ## Executive Summary
 <!-- First 15 lines. Everything a tech lead needs. -->
@@ -380,7 +420,7 @@ Section order is fixed. Do not rearrange.
 <!-- v5 history: include as context, do not compute delta -->
 
 ## Evidence Log
-<!-- Files read, API calls, confidence per finding, adversarial outcomes -->
+<!-- Files read, API calls, confidence per finding, consensus outcomes -->
 ```
 
 ### assessment.json (structured data)
@@ -406,10 +446,10 @@ Everything:
 - Files read with relevant excerpts
 - KB patterns matched and not matched, with reasoning
 - Opportunity generation reasoning per opportunity
-- Adversarial Stage A dialogue (full)
+- Dual-agent consensus dialogue — Phase 1 / Opportunity Map (full)
 - Component assessment reasoning (adoption, readiness, risk per opportunity)
 - Recommendation generation reasoning
-- Adversarial Stage B dialogue (full)
+- Dual-agent consensus dialogue — Phase 2 / Recommendations (full)
 - Rejected opportunities: what + why
 - Rejected recommendations: what + why
 - Any anomalies, limitations, or uncertainties encountered

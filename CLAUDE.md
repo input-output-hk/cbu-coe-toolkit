@@ -47,12 +47,12 @@ Design principles:
 - **AAMM is a consultation, not a score.** It tells teams where they are and what to do next with highest ROI.
 - **Does not judge teams** — informs and recommends.
 - **Measure outcomes, not mechanisms.** Score what matters, not which tool is used. See ADR-011.
-- **Adversarial review is mandatory (ADR-012).** Two stages: opportunity map + recommendations.
+- **Tri-agent consensus — Claude + Gemini + Grok at every phase (ADR-020 + spec 2026-04-03).**
 - **Report is official at completion.** CoE challenges post-publication, not pre-publication.
 
-## AAMM v6
+## AAMM v7
 
-AAMM v6 uses a single AI agent with KB-driven, per-use-case assessment. See ADR-019 (supersedes ADR-018).
+AAMM v7 uses tri-agent consensus (Claude + Gemini + Grok) with local clone + request/serve protocol. See ADR-020.
 
 **Separation of concerns:**
 - `spec.md` = design rationale (for humans)
@@ -62,28 +62,55 @@ AAMM v6 uses a single AI agent with KB-driven, per-use-case assessment. See ADR-
 - `models/ai-augmentation-maturity/scoring-model.md` — **read first at scan time**
 - `models/ai-augmentation-maturity/knowledge-base/` — opportunity patterns + readiness criteria
 - `models/ai-augmentation-maturity/spec.md` — architecture + edge cases
-- `models/config.yaml` — tracked repo list (29 repos, 4 orgs)
+- `models/config.yaml` — tracked repos (29 repos, 4 orgs) + reference_repos for KB enrichment
 
 **Read order for agents:**
 1. `scoring-model.md` — step-by-step operational manual
 2. KB files for target ecosystem — opportunity patterns + readiness criteria
 3. `models/config.yaml` — which repos to scan
 
-## Scan flow (v6)
+## Scan flow (v7 — tri-agent consensus)
 
 ```
-/scan-aamm-v6 owner/repo
-  → Load scoring-model.md + KB          # Agent reads operational manual + ecosystem patterns
-  → Collect repo data via GitHub API     # Tree, commits, PRs, key files, churn
-  → Generate Opportunity Map             # KB patterns matched to repo evidence, ROI-ordered
-  → Adversarial Review — Stage A         # Separate agent filters platitudes
-  → Assess per opportunity               # Adoption State, Readiness (KB criteria), Risk Surface
-  → Generate Recommendations             # ROI-ordered, with recommended learning
-  → Adversarial Review — Stage B         # Separate agent challenges recommendations
-  → Generate report (3 files)            # report.md, assessment.json, detailed-log.md ✓ OFFICIAL
+/scan-aamm-v7 owner/repo
+  → Health-check Gemini CLI + Grok API (parallel)  # STOP if either unavailable
+  → Access check via GitHub API                     # STOP if 403
+  → Clone repo locally → /tmp/aamm-v7-$OWNER-$REPO/clone/
+  → Detect repo type (library/web-app/cli-tool/infrastructure/mixed)
+  → Detect monorepo subprojects (deny-list: vendor/, deps/, third_party/)
+  → Generate neutral manifest (structure + stats, no content, no signals)
+
+  → Phase 1: File Requests (independent, parallel)
+    → Claude subagent: requests files based on manifest + KB
+    → Gemini: requests files based on manifest + KB (--yolo, can browse beyond list)
+    → Grok: requests files based on manifest + KB (batched, max 50/batch)
+    → Orchestrator serves all requests unfiltered from /clone/
+
+  → Phase 2: Independent Analysis
+    → Claude subagent: produces opportunity-map-claude.json
+    → Gemini: produces opportunity-map-gemini.json
+    → Grok: produces opportunity-map-grok.json
+    → No agent sees another's output
+
+  → Phase 3: Consensus — Opportunity Map
+    → Intersection-first (items all 3 found → auto-approved)
+    → Consensus loop max 5 rounds (JSON structured, ~120 tokens/exchange)
+    → Tiered outcome: HIGH (all ≥9) | MEDIUM (2/3 ≥9 + third ≥7, CoE flag) | consensus:false
+    → MEDIUM cap: 10 items per scan; overflow downgraded to LOW
+    → Component Assessment (adoption/readiness/risk): same pattern
+
+  → Phase 4: Consensus — Recommendations
+    → All 3 generate independently → intersection-first → loop
+    → ROI ordering consensus
+
+  → Phase 5: Report Generation (Claude subagent, fresh context)
+    → Reads assessment.json (frozen) + previous scan for delta
+    → Writes: report.md, assessment.json, detailed-log.md
+
+  → Phase 6: Save to scans/ai-augmentation/results/YYYY-MM-DD/$OWNER--$REPO/
 ```
 
-Fully autonomous. No confirmations. No mid-scan gates. Report is official at completion.
+Mid-scan failure: Gemini or Grok unavailable after 5 retries → continue PARTIAL with ⚠ WARNING in report.
 Results go to `scans/ai-augmentation/results/YYYY-MM-DD/`.
 
 ## Gemini reviewer
@@ -119,7 +146,7 @@ Independent reviewer powered by Gemini 3.1 Pro. Available on-demand and as pre-c
 9. **Model definitions are mutable drafts.** Flag edge cases and inconsistencies.
 10. **PRs explain why**, not just what.
 11. **When unsure, ask.**
-12. **Adversarial review is two-stage (ADR-012 + ADR-019).** Stage A on opportunity map, Stage B on recommendations. Both mandatory.
+12. **Tri-agent consensus is mandatory (ADR-020 + spec 2026-04-03).** Claude + Gemini + Grok participate in every scoring scan. Health check failure at start → STOP. Mid-scan failure after 5 retries → PARTIAL with WARNING.
 13. **Don't patch broken architecture.** When a bug reveals a design flaw, stop. Audit. Fix the design, then the implementation.
 
 ## Sync protocol

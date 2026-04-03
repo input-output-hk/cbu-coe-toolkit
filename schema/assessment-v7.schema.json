@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AAMM v7 Assessment",
+  "type": "object",
+  "required": ["scan_metadata", "opportunity_map", "recommendations"],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": ["repo", "date", "agents", "consensus_model", "scan_mode"],
+      "properties": {
+        "repo": { "type": "string" },
+        "subproject": { "type": ["string", "null"] },
+        "date": { "type": "string", "format": "date" },
+        "agents": {
+          "type": "array",
+          "items": { "enum": ["claude", "gemini", "grok"] }
+        },
+        "consensus_model": { "enum": ["tri-agent-v1", "partial-gemini", "partial-grok"] },
+        "scan_mode": { "enum": ["scoring", "learning"] },
+        "local_clone": { "type": "boolean" },
+        "repo_type": { "enum": ["library", "web-app", "cli-tool", "infrastructure", "mixed"] },
+        "partial": { "type": "boolean", "default": false },
+        "partial_reason": { "type": ["string", "null"] },
+        "phase_1_rounds": { "type": "integer" },
+        "phase_2_rounds": { "type": "integer" },
+        "medium_overflow_count": { "type": "integer", "default": 0 }
+      }
+    },
+    "opportunity_map": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "value", "effort", "roi_rank", "evidence", "consensus"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "value": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+          "effort": { "enum": ["High", "Medium", "Low"] },
+          "roi_rank": { "type": "integer" },
+          "evidence": { "type": "string" },
+          "kb_pattern": { "type": ["string", "null"] },
+          "found_by": {
+            "type": "array",
+            "items": { "enum": ["claude", "gemini", "grok"] }
+          },
+          "consensus": { "type": "boolean" },
+          "value_reason": {
+            "type": ["string", "null"],
+            "enum": ["all_high", "majority_high", "downgraded_overflow", "no_consensus", null],
+            "description": "B1 fix: why this value was assigned — decouples value from consensus boolean"
+          },
+          "downgraded_reason": {
+            "type": ["string", "null"],
+            "description": "B4 fix: set when item downgraded MEDIUM→LOW due to overflow cap"
+          },
+          "confidence": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+          "coe_review_required": { "type": "boolean", "default": false },
+          "consensus_round": { "type": "integer" },
+          "claude_score": { "type": ["number", "null"] },
+          "gemini_score": { "type": ["number", "null"] },
+          "grok_score": { "type": ["number", "null"] },
+          "debate_summary": { "type": ["string", "null"] },
+          "disagreement": {
+            "type": ["object", "null"],
+            "properties": {
+              "claude_final_argument": { "type": "string" },
+              "gemini_final_argument": { "type": "string" },
+              "grok_final_argument": { "type": "string" },
+              "unresolved_objection": { "type": "string" }
+            }
+          },
+          "file_requests": {
+            "type": "object",
+            "properties": {
+              "claude": { "type": "array", "items": { "type": "string" } },
+              "gemini": { "type": "array", "items": { "type": "string" } },
+              "grok": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "adoption_state": {
+            "type": ["object", "null"],
+            "properties": {
+              "state": { "enum": ["Active", "Partial", "Absent"] },
+              "evidence": { "type": "string" }
+            }
+          },
+          "readiness": { "type": ["object", "null"] },
+          "risk_surface": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "properties": {
+                "scenario": { "type": "string" },
+                "scale_threshold": { "type": ["string", "null"] },
+                "detection_difficulty": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+                "blast_radius": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+                "ai_exposure": { "enum": ["confirmed", "potential", "none"] },
+                "evidence": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "opportunity_id", "type", "consensus"],
+        "properties": {
+          "id": { "type": "string" },
+          "opportunity_id": { "type": "string" },
+          "type": { "enum": ["start_now", "foundation_first", "fix_the_foundation"] },
+          "title": { "type": "string" },
+          "rationale": { "type": "string" },
+          "roi_rank": { "type": "integer" },
+          "consensus": { "type": "boolean" },
+          "confidence": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+          "coe_review_required": { "type": "boolean", "default": false },
+          "found_by": { "type": "array", "items": { "enum": ["claude", "gemini", "grok"] } },
+          "claude_score": { "type": ["number", "null"] },
+          "gemini_score": { "type": ["number", "null"] },
+          "grok_score": { "type": ["number", "null"] },
+          "debate_summary": { "type": ["string", "null"] }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "reference_repo_entry": {
+      "type": "object",
+      "description": "B3 fix: schema for entries in config.yaml reference_repos list",
+      "required": ["repo", "language", "scope", "rationale", "selected_by", "selected_date"],
+      "properties": {
+        "repo": { "type": "string", "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$" },
+        "language": { "enum": ["haskell", "rust", "typescript", "python"] },
+        "scope": { "enum": ["learning"] },
+        "rationale": { "type": "string", "minLength": 10 },
+        "selected_by": { "enum": ["tri-agent-consensus"] },
+        "selected_date": { "type": "string", "format": "date" }
+      }
+    }
+  }
+}
